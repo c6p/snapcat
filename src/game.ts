@@ -1,7 +1,7 @@
-import { rand } from "./utils";
+import { rand, randf } from "./utils";
 
-const WIDTH = 800;
-const HEIGHT = 550;
+const WIDTH = 640;
+const HEIGHT = 640;
 const DOCK_STEP = 60;
 const DOCK_MIN = HEIGHT - 100;
 
@@ -10,8 +10,8 @@ export function returnToMenu(app: HTMLDivElement) {
 
   app.innerHTML = `
     <div class="card">
-      <!--<h1>Snap Cat !</h1>
-      <h1>📸 😺</h1>-->
+      <h1>Snap Cat !</h1>
+      <h1>📸 😺</h1>
     </div>
     <div>
       <button id="game" type="button">Start Game</button>
@@ -25,7 +25,7 @@ export function returnToMenu(app: HTMLDivElement) {
 function startGame(app: HTMLDivElement) {
   console.log("Game started");
 
-  const docks = Array.from({ length: 3 }, (_, i) => createDock(i)).join("");
+  const docks = Array.from({ length: 5 }, (_, i) => createDock(i)).join("");
 
   const catCount = 9;
   let cats = "";
@@ -67,194 +67,164 @@ function setDragEvents() {
   let offset = { x: 0, y: 0 };
   const dockElements = new Map();
 
-  // Initialize map for each dock
+  // Initialize dock tracking
   docks.forEach((dock) => dockElements.set(dock.id, []));
 
-  // Initialize all elements to use transform for positioning
-  draggableElements.forEach((el) => {
-    el.addEventListener("mousedown", startDrag);
-  });
-
   const getMousePosition = (evt: MouseEvent | TouchEvent) => {
-    const CTM = svg.getScreenCTM()!;
-    const client = "touches" in evt ? evt.touches[0] : evt;
+    const ctm = svg.getScreenCTM()!;
+    const client =
+      "touches" in evt ? evt.touches?.[0] ?? evt.changedTouches[0] : evt;
     return {
-      x: (client.clientX - CTM.e) / CTM.a,
-      y: (client.clientY - CTM.f) / CTM.d,
+      x: (client.clientX - ctm.e) / ctm.a,
+      y: (client.clientY - ctm.f) / ctm.d,
     };
   };
 
-  function startDrag(evt: MouseEvent | TouchEvent) {
+  const resolveCollisions = (intruder: any, dockId: string) => {
+    const elements = dockElements.get(dockId);
+    const spacing = -5;
+    const transform = intruder.transform.baseVal.getItem(0).matrix;
+    const left = transform.e;
+    const width = intruder.getBBox().width;
+    const right = left + width;
+    const midX = left + width / 2;
+
+    // Push right elements
+    elements
+      .filter(
+        (el: any) =>
+          el !== intruder &&
+          el.transform.baseVal.getItem(0).matrix.e + el.getBBox().width / 2 >=
+            midX
+      )
+      .sort(
+        (a: any, b: any) =>
+          a.transform.baseVal.getItem(0).matrix.e -
+          b.transform.baseVal.getItem(0).matrix.e
+      )
+      .reduce((anchor: number, el: any) => {
+        const t = el.transform.baseVal.getItem(0).matrix;
+        if (t.e < anchor) {
+          el.setAttribute("transform", `translate(${anchor}, ${t.f})`);
+          return anchor + el.getBBox().width + spacing;
+        }
+        return t.e + el.getBBox().width + spacing;
+      }, right + spacing);
+
+    // Push left elements
+    elements
+      .filter(
+        (el: any) =>
+          el !== intruder &&
+          el.transform.baseVal.getItem(0).matrix.e + el.getBBox().width / 2 <
+            midX
+      )
+      .sort(
+        (a: any, b: any) =>
+          b.transform.baseVal.getItem(0).matrix.e -
+          a.transform.baseVal.getItem(0).matrix.e
+      )
+      .reduce((anchor: number, el: any) => {
+        const t = el.transform.baseVal.getItem(0).matrix;
+        const w = el.getBBox().width;
+        if (t.e + w > anchor) {
+          el.setAttribute("transform", `translate(${anchor - w}, ${t.f})`);
+          return anchor - w - spacing;
+        }
+        return t.e - spacing;
+      }, left - spacing);
+  };
+
+  const updateZOrder = () => {
+    Array.from(docks)
+      .sort(
+        (a: any, b: any) =>
+          parseFloat(a.querySelector(".dock-line").getAttribute("y1")) -
+          parseFloat(b.querySelector(".dock-line").getAttribute("y1"))
+      )
+      .forEach((dock: any) =>
+        (dockElements.get(dock.id) || []).forEach((el: any) =>
+          svg.appendChild(el)
+        )
+      );
+  };
+
+  const startDrag = (evt: MouseEvent | TouchEvent) => {
     evt.preventDefault();
-    selectedElement = evt.target as SVGGeometryElement;
+    selectedElement = evt.currentTarget as SVGGeometryElement;
     // Bring element to the very top while dragging
     svg.appendChild(selectedElement);
 
     const mousePos = getMousePosition(evt);
     const transform = selectedElement.transform.baseVal.getItem(0).matrix;
-    offset = {
-      x: mousePos.x - transform.e,
-      y: mousePos.y - transform.f,
-    };
+    offset = { x: mousePos.x - transform.e, y: mousePos.y - transform.f };
 
-    // If the element was in a dock, remove it from tracking.
-    // This leaves a gap, as requested.
-    for (const [_dockId, elements] of dockElements.entries()) {
+    // Remove from docks
+    for (const [, elements] of dockElements.entries()) {
       const index = elements.indexOf(selectedElement);
       if (index > -1) {
         elements.splice(index, 1);
         break;
       }
     }
-  }
+  };
 
-  function drag(evt: MouseEvent | TouchEvent) {
+  const drag = (evt: MouseEvent | TouchEvent) => {
     if (!selectedElement) return;
     evt.preventDefault();
     const mousePos = getMousePosition(evt);
-    const newX = mousePos.x - offset.x;
-    const newY = mousePos.y - offset.y;
-    selectedElement.setAttribute("transform", `translate(${newX}, ${newY})`);
-  }
+    selectedElement.setAttribute(
+      "transform",
+      `translate(${mousePos.x - offset.x}, ${mousePos.y - offset.y})`
+    );
+  };
 
-  function endDrag(evt: MouseEvent | TouchEvent) {
+  const endDrag = (evt: MouseEvent | TouchEvent) => {
     if (!selectedElement) return;
 
-    const activeDock = getActiveDock(evt);
+    const mousePos = getMousePosition(evt);
+    let activeDock = null;
+
+    // Find active dock
+    for (const dock of docks) {
+      const dockLine = dock.querySelector(".dock-line");
+      const dockY = parseFloat(dockLine!.getAttribute("y1")!);
+      if (mousePos.y > dockY - 60 && mousePos.y < dockY + 20) {
+        activeDock = dock;
+        break;
+      }
+    }
 
     if (activeDock) {
-      const mousePos = getMousePosition(evt);
-      const elHeight = parseFloat(selectedElement.getAttribute("height"));
-      const dockLineY = parseFloat(
-        activeDock.querySelector(".dock-line").getAttribute("y1")
+      const height = selectedElement.getBBox().height;
+      const dockY = parseFloat(
+        activeDock.querySelector(".dock-line")!.getAttribute("y1")!
+      );
+      selectedElement.setAttribute(
+        "transform",
+        `translate(${mousePos.x - offset.x}, ${dockY - height})`
       );
 
-      // Set precise drop position based on cursor
-      const newX = mousePos.x - offset.x;
-      const newY = dockLineY - elHeight;
-      selectedElement.setAttribute("transform", `translate(${newX}, ${newY})`);
-
-      // Add to the new dock's tracking array and resolve collisions
       dockElements.get(activeDock.id).push(selectedElement);
-      resolveCollisionsFrom(selectedElement, activeDock.id);
-
-      // Update the z-order of all docked elements
+      resolveCollisions(selectedElement, activeDock.id);
       updateZOrder();
     }
     selectedElement = null;
-  }
+  };
 
-  function resolveCollisionsFrom(intruder, dockId) {
-    const elements = dockElements.get(dockId);
-    const spacing = 5; // Minimum space between elements
+  // Setup draggable elements
+  draggableElements.forEach((el) => {
+    el.addEventListener("mousedown", startDrag as any);
+    el.addEventListener("touchstart", startDrag as any, { passive: false });
+  });
 
-    const intruderTransform = intruder.transform.baseVal.getItem(0).matrix;
-    const intruderLeft = intruderTransform.e;
-    const intruderWidth = parseFloat(intruder.getAttribute("width"));
-    const intruderRight = intruderLeft + intruderWidth;
-    const intruderMidX = intruderLeft + intruderWidth / 2;
-
-    // --- PUSH ELEMENTS TO THE RIGHT ---
-    const rightGroup = elements
-      .filter((el) => {
-        if (el === intruder) return false;
-        const elMidX =
-          el.transform.baseVal.getItem(0).matrix.e +
-          parseFloat(el.getAttribute("width")) / 2;
-        return elMidX >= intruderMidX;
-      })
-      .sort(
-        (a, b) =>
-          a.transform.baseVal.getItem(0).matrix.e -
-          b.transform.baseVal.getItem(0).matrix.e
-      );
-
-    let anchorRight = intruderRight + spacing;
-    rightGroup.forEach((el) => {
-      const transform = el.transform.baseVal.getItem(0).matrix;
-      const elLeft = transform.e;
-
-      if (elLeft < anchorRight) {
-        const newX = anchorRight;
-        el.setAttribute("transform", `translate(${newX}, ${transform.f})`);
-        anchorRight = newX + parseFloat(el.getAttribute("width")) + spacing;
-      } else {
-        anchorRight = elLeft + parseFloat(el.getAttribute("width")) + spacing;
-      }
-    });
-
-    // --- PUSH ELEMENTS TO THE LEFT ---
-    const leftGroup = elements
-      .filter((el) => {
-        if (el === intruder) return false;
-        const elMidX =
-          el.transform.baseVal.getItem(0).matrix.e +
-          parseFloat(el.getAttribute("width")) / 2;
-        return elMidX < intruderMidX;
-      })
-      .sort(
-        (a, b) =>
-          b.transform.baseVal.getItem(0).matrix.e -
-          a.transform.baseVal.getItem(0).matrix.e
-      );
-
-    let anchorLeft = intruderLeft - spacing;
-    leftGroup.forEach((el) => {
-      const transform = el.transform.baseVal.getItem(0).matrix;
-      const elWidth = parseFloat(el.getAttribute("width"));
-      const elRight = transform.e + elWidth;
-
-      if (elRight > anchorLeft) {
-        const newX = anchorLeft - elWidth;
-        el.setAttribute("transform", `translate(${newX}, ${transform.f})`);
-        anchorLeft = newX - spacing;
-      } else {
-        anchorLeft = transform.e - spacing;
-      }
-    });
-  }
-
-  function getActiveDock(evt) {
-    const mousePos = getMousePosition(evt);
-    for (const dock of docks) {
-      const dockLine = dock.querySelector(".dock-line");
-      const dockY = parseFloat(dockLine.getAttribute("y1"));
-      const sensitivity = 60; // How close the mouse needs to be to the dock line
-      if (mousePos.y > dockY - sensitivity && mousePos.y < dockY + 20) {
-        return dock;
-      }
-    }
-    return null;
-  }
-
-  function updateZOrder() {
-    // Sort docks from top to bottom (visually)
-    const sortedDocks = Array.from(docks).sort((a, b) => {
-      const yA = parseFloat(a.querySelector(".dock-line").getAttribute("y1"));
-      const yB = parseFloat(b.querySelector(".dock-line").getAttribute("y1"));
-      return yA - yB;
-    });
-
-    // Re-append elements dock by dock. SVG appends to the end, making
-    // the last appended elements appear on top.
-    sortedDocks.forEach((dock) => {
-      const elementsInDock = dockElements.get(dock.id) || [];
-      elementsInDock.forEach((el) => {
-        svg.appendChild(el);
-      });
-    });
-  }
-
-  // --- Attach Event Listeners ---
+  // Global listeners
   svg.addEventListener("mousemove", drag);
   svg.addEventListener("mouseup", endDrag);
-  svg.addEventListener("mouseleave", endDrag); // End drag if mouse leaves SVG
-
-  // Touch event support
+  svg.addEventListener("mouseleave", endDrag);
   svg.addEventListener("touchmove", drag, { passive: false });
   svg.addEventListener("touchend", endDrag);
   svg.addEventListener("touchcancel", endDrag);
 
-  // Set initial Z-order on page load
   updateZOrder();
 }
