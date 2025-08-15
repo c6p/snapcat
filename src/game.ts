@@ -36,7 +36,7 @@ function startGame(app: HTMLDivElement) {
   }
 
   app.innerHTML = `
-  <svg id="game"width="${WIDTH}" height="${HEIGHT}">
+  <svg id="game" width="100%" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" >
     ${docks}
     ${cats}
   </svg>
