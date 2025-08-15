@@ -232,13 +232,16 @@ function setDragEvents() {
     if (!selectedElement) return;
 
     const mousePos = getMousePosition(evt);
+const { f } = selectedElement.transform.baseVal.getItem(0).matrix;
+    const { height } = selectedElement.getBBox();
     let activeDock = null;
 
     // Find active dock
     for (const dock of docks) {
       const dockLine = dock.querySelector(".dock-line");
       const dockY = parseFloat(dockLine!.getAttribute("y1")!);
-      if (mousePos.y > dockY - DOCK_STEP && mousePos.y <= dockY) {
+const y = f + height;
+      if (y > dockY - DOCK_STEP && y <= dockY + STEP_OFFSET) {
         activeDock = dock;
         break;
       }
