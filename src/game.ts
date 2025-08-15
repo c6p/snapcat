@@ -3,6 +3,7 @@ import { randf } from "./utils";
 const WIDTH = 640;
 const HEIGHT = 640;
 const DOCK_STEP = 60;
+const STEP_OFFSET = 10;
 const DOCK_MIN = HEIGHT - 100;
 
 const dockElements = new Map();
@@ -89,8 +90,17 @@ function createCat(_index: number, width: number, height: number): string {
 
 function createDock(index: number) {
   const y = DOCK_MIN - DOCK_STEP * index;
+const step = DOCK_STEP / 2;
+  const x = 10 + index * 10;
+  const y2 = y + step - STEP_OFFSET;
   return `<g class="dock" id="dock${index}">
-    <line class="dock-line" x1="0" y1="${y}" x2="${WIDTH}" y2="${y}" />
+<polygon points="${x},${y} ${WIDTH - x},${y} ${WIDTH - x + 10},${
+    y + step
+  } ${x - 10},${y + step}" fill="#e0e0e0"/>
+    <rect x="${x - 10}" y="${y + step}" width="${
+    WIDTH - 2 * x + 20
+  }" height="${step}" fill="#a0a0a0"/>
+    <line class="dock-line" x1="0" y1="${y2}" x2="${WIDTH}" y2="${y2}" />
   </g>`;
 }
 
