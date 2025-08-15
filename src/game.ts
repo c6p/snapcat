@@ -7,6 +7,7 @@ const STEP_OFFSET = 10;
 const DOCK_MIN = HEIGHT - 100;
 
 const dockElements = new Map();
+let highlighted: SVGGraphicsElement[] = [];
 
 export function returnToMenu(app: HTMLDivElement) {
   console.debug("Returning to menu");
@@ -121,6 +122,42 @@ function putElementInDock(
   dock.appendChild(element); // update z order
 }
 
+function findNeighbours(element: SVGGraphicsElement) {
+  const x = element.transform.baseVal.getItem(0).matrix.e;
+  const width = element.getBBox().width;
+  const dockId = element.dataset.dockId;
+  const docks = [...document.querySelectorAll(".dock")];
+
+  const getElements = (dockIndex: number) =>
+    [
+      ...(docks.at(dockIndex)?.querySelectorAll(".draggable") ?? []),
+    ] as SVGGraphicsElement[];
+
+  const neighbours = (dockIndex: number) => {
+    const elements = getElements(dockIndex);
+    return elements.filter((el) => {
+      const _x = el.transform.baseVal.getItem(0).matrix.e;
+      const _width = el.getBBox().width;
+      return _x < x + width && _x + _width > x;
+    });
+  };
+
+  const dockIndex = docks.findIndex((dock) => dock.id === dockId);
+  const allNeighbours = [-1, 0, 1].map((i) => neighbours(dockIndex + i));
+
+  return allNeighbours;
+}
+
+function highlightElements(elements: SVGGraphicsElement[]) {
+  highlighted = elements;
+  elements.forEach((el) => el?.classList.add("highlight"));
+}
+
+function unhighlightElements() {
+  highlighted.forEach((el) => el?.classList.remove("highlight"));
+  highlighted = [];
+}
+
   const resolveCollisions = (intruder: any, dockId: string) => {
     const elements = dockElements.get(dockId);
     const spacing = -5;
@@ -200,6 +237,8 @@ function setDragEvents() {
   const startDrag = (evt: MouseEvent | TouchEvent) => {
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
+const [prev, cur, next] = findNeighbours(selectedElement);
+
     // Bring element to the very top while dragging
     svg.appendChild(selectedElement);
 
@@ -216,6 +255,8 @@ function setDragEvents() {
         break;
       }
     }
+
+    highlightElements([...cur, ...prev, ...next]);
   };
 
   const drag = (evt: MouseEvent | TouchEvent) => {
@@ -256,6 +297,7 @@ const y = f + height;
 
     putElementInDock(selectedElement, activeDock, x);
     selectedElement = null;
+unhighlightElements();
   };
 
   // Setup draggable elements

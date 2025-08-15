@@ -70,3 +70,7 @@ button:focus-visible {
 path {
   stroke-linecap: round;
 }
+
+.highlight #body{
+  stroke: cyan;
+}
