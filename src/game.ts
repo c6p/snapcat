@@ -1,4 +1,4 @@
-import { rand, randf } from "./utils";
+import { randf } from "./utils";
 
 const WIDTH = 640;
 const HEIGHT = 640;
@@ -29,9 +29,11 @@ function startGame(app: HTMLDivElement) {
 
   const catCount = 9;
   let cats = "";
+  cats += createCat(-9, 0.5, 1.3);
+  cats += createCat(-9, 1.3, 0.7);
   for (let i = 0; i < catCount; i++) {
-    const width = rand(50, 100);
-    const height = rand(75, 150);
+    const width = randf(0.5, 1.3);
+    const height = randf(0.5, 1.3);
     cats += createCat(i, width, height);
   }
 
@@ -45,10 +47,29 @@ function startGame(app: HTMLDivElement) {
   setDragEvents();
 }
 
-function createCat(index: number, width: number, height: number): string {
-  return `<rect class="draggable" transform="translate(${
-    index * 50
-  }, 50)" width="${width}" height="${height}" rx="10" ry="10" fill="#666" />`;
+function createCat(_index: number, width: number, height: number): string {
+  return `<g class="draggable">
+  <g transform="scale(${width} ${height})translate(59 -51)">
+    <path id="body" fill="#797b7c" stroke="#100f0d" stroke-width="1.5" d="M-1.7 201c-14.8-.2-29.7-.6-44.2-4-5.7-.6-7.8-7.2-8.3-12.6a363 363 0 0 1 4.1-72.1c3.8-27.4 7.9-42.4 14-57.3 5.4-14.5 8.5 15.8 19.3 14.2 10.6-.7 19.4.3 29-.6 4-3 11.8-26.7 14.4-13 6.6 17.2 12 33.2 15.7 61 3.8 27.8 3.4 53.2 2 69 .2 6.5-4.8 10.6-10.2 11.7A138.4 138.4 0 0 1-1.7 201z"/>
+    <path id="belly" fill="#fbfcfc" d="M16 151.6c-6.8-6-27.6-7.6-37.6-.5s-10.5 40.1-13 47c9.6 2.2 27 2.4 32.9 2.4 12.4 0 22.7-1 26.2-1.8-1.5-7.8-3.5-42.7-8.6-47.1"/>
+    <path id="ear" fill="#fbfcfc" d="M23.7 56.2c-1.8 0-5.8 8.6-6.2 10.7-.3 1.4 10 1.8 10.4.6.3-1.2-3-11.4-4.2-11.3z"/>
+    <path id="eye" stroke="#100f0d" stroke-width="3.1" d="m10 89 4 1"/>
+    <g id="hand" transform="rotate(90,24,135)">
+      <path id="paw" fill="#797b7c" stroke="#100f0d" stroke-width="1.6" d="M30.8 120.8c0-.4 1.7-7.4.2-10.5-.7-1.4-2.7-2.2-5.2-2.2h-.6c-2.5.2-5.4 1-6.3 2.8-1.5 2.7-.3 10-.3 10.4"/>
+      <path id="finger" stroke="#100f0d" stroke-width="1.1" d="M27 108.6v2.6"/>
+      <use xlink:href="#finger" id="finger2" transform="translate(-4.6 .5)"/>
+    </g>
+    <use xlink:href="#hand" id="handl" transform="matrix(-1 0 0 1 -8 0)rotate(180,24,135)"/>
+    <use xlink:href="#eye" id="eyel" transform="matrix(-1 0 0 1 -8 0)"/>
+    <g id="nm" transform="translate(1.8 2.1)">
+      <path id="mouth" fill="none" stroke="#11100e" stroke-width="1" d="M0 96.2c-.4.5-1.1 1.9-2.5 1.6C-4 97.5-4 95.6-4 95.6"/>
+      <path id="nose" fill="#100f0d" d="M-4.8 95.8v-3c1.5 0 2.7 0 2.8.8 0 .7-1 1.8-2.2 2v.1a2.5 2.5 0 0 1-.6 0"/>
+      <use xlink:href="#mouth" id="mouthl" transform="matrix(-1 0 0 1 -9.6 0)"/>
+      <use xlink:href="#nose" id="nosel" transform="matrix(-1 0 0 1 -9.6 0)"/>
+    </g>
+    <use xlink:href="#ear" id="earl" transform="matrix(-1 0 0 1 -9 .4)"/>
+  </g>
+  </g>`;
 }
 
 function createDock(index: number) {
