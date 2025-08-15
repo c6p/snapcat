@@ -5,6 +5,8 @@ const HEIGHT = 640;
 const DOCK_STEP = 60;
 const DOCK_MIN = HEIGHT - 100;
 
+const dockElements = new Map();
+
 export function returnToMenu(app: HTMLDivElement) {
   console.debug("Returning to menu");
 
@@ -25,7 +27,10 @@ export function returnToMenu(app: HTMLDivElement) {
 function startGame(app: HTMLDivElement) {
   console.log("Game started");
 
-  const docks = Array.from({ length: 5 }, (_, i) => createDock(i)).join("");
+  const dockCount = 5;
+  const docks = Array.from({ length: dockCount }, (_, i) =>
+    createDock(dockCount - i - 1)
+  ).join("");
 
   const catCount = 9;
   let cats = "";
@@ -45,6 +50,16 @@ function startGame(app: HTMLDivElement) {
   `;
 
   setDragEvents();
+
+  for (const cat of document.querySelectorAll<SVGGeometryElement>(
+    `.draggable`
+  )) {
+    putElementInDock(
+      cat,
+      document.querySelector(`#dock${rand(0, dockCount - 1)}`),
+      WIDTH / 2
+    );
+  }
 }
 
 function createCat(_index: number, width: number, height: number): string {
@@ -79,27 +94,22 @@ function createDock(index: number) {
   </g>`;
 }
 
-function setDragEvents() {
-  const svg = document.querySelector<SVGSVGElement>("#game")!;
-  const docks = document.querySelectorAll(".dock");
-  const draggableElements = document.querySelectorAll(".draggable");
+function putElementInDock(
+  element: SVGGeometryElement,
+  dock: Element,
+  x: number
+) {
+  const height = element.getBBox().height;
+  const dockY = parseFloat(
+    dock.querySelector(".dock-line")!.getAttribute("y1")!
+  );
+  element.setAttribute("transform", `translate(${x}, ${dockY - height})`);
 
-  let selectedElement: SVGGeometryElement | null = null;
-  let offset = { x: 0, y: 0 };
-  const dockElements = new Map();
-
-  // Initialize dock tracking
-  docks.forEach((dock) => dockElements.set(dock.id, []));
-
-  const getMousePosition = (evt: MouseEvent | TouchEvent) => {
-    const ctm = svg.getScreenCTM()!;
-    const client =
-      "touches" in evt ? evt.touches?.[0] ?? evt.changedTouches[0] : evt;
-    return {
-      x: (client.clientX - ctm.e) / ctm.a,
-      y: (client.clientY - ctm.f) / ctm.d,
-    };
-  };
+  dockElements.get(dock.id).push(element);
+  element.dataset.dockId = dock.id;
+  resolveCollisions(element, dock.id);
+  dock.appendChild(element); // update z order
+}
 
   const resolveCollisions = (intruder: any, dockId: string) => {
     const elements = dockElements.get(dockId);
@@ -137,8 +147,7 @@ function setDragEvents() {
       .filter(
         (el: any) =>
           el !== intruder &&
-          el.transform.baseVal.getItem(0).matrix.e + el.getBBox().width / 2 <
-            midX
+        el.transform.baseVal.getItem(0).matrix.e + el.getBBox().width / 2 < midX
       )
       .sort(
         (a: any, b: any) =>
@@ -156,18 +165,26 @@ function setDragEvents() {
       }, left - spacing);
   };
 
-  const updateZOrder = () => {
-    Array.from(docks)
-      .sort(
-        (a: any, b: any) =>
-          parseFloat(a.querySelector(".dock-line").getAttribute("y1")) -
-          parseFloat(b.querySelector(".dock-line").getAttribute("y1"))
-      )
-      .forEach((dock: any) =>
-        (dockElements.get(dock.id) || []).forEach((el: any) =>
-          svg.appendChild(el)
-        )
-      );
+function setDragEvents() {
+  const svg = document.querySelector<SVGSVGElement>("#game")!;
+  const docks = document.querySelectorAll(".dock");
+  const draggableElements = document.querySelectorAll(".draggable");
+
+  let selectedElement: SVGGeometryElement | null = null;
+  let oldPos = { x: 0, y: 0 };
+  let offset = { x: 0, y: 0 };
+
+  // Initialize dock tracking
+  docks.forEach((dock) => dockElements.set(dock.id, []));
+
+  const getMousePosition = (evt: MouseEvent | TouchEvent) => {
+    const ctm = svg.getScreenCTM()!;
+    const client =
+      "touches" in evt ? evt.touches?.[0] ?? evt.changedTouches[0] : evt;
+    return {
+      x: (client.clientX - ctm.e) / ctm.a,
+      y: (client.clientY - ctm.f) / ctm.d,
+    };
   };
 
   const startDrag = (evt: MouseEvent | TouchEvent) => {
@@ -178,6 +195,7 @@ function setDragEvents() {
 
     const mousePos = getMousePosition(evt);
     const transform = selectedElement.transform.baseVal.getItem(0).matrix;
+    oldPos = { x: transform.e, y: transform.f };
     offset = { x: mousePos.x - transform.e, y: mousePos.y - transform.f };
 
     // Remove from docks
@@ -210,26 +228,20 @@ function setDragEvents() {
     for (const dock of docks) {
       const dockLine = dock.querySelector(".dock-line");
       const dockY = parseFloat(dockLine!.getAttribute("y1")!);
-      if (mousePos.y > dockY - 60 && mousePos.y < dockY + 20) {
+      if (mousePos.y > dockY - DOCK_STEP && mousePos.y <= dockY) {
         activeDock = dock;
         break;
       }
     }
 
-    if (activeDock) {
-      const height = selectedElement.getBBox().height;
-      const dockY = parseFloat(
-        activeDock.querySelector(".dock-line")!.getAttribute("y1")!
-      );
-      selectedElement.setAttribute(
-        "transform",
-        `translate(${mousePos.x - offset.x}, ${dockY - height})`
-      );
-
-      dockElements.get(activeDock.id).push(selectedElement);
-      resolveCollisions(selectedElement, activeDock.id);
-      updateZOrder();
+    let x = mousePos.x - offset.x;
+    if (!activeDock) {
+      // revert
+      activeDock = document.getElementById(selectedElement.dataset.dockId!);
+      x = oldPos.x;
     }
+
+    putElementInDock(selectedElement, activeDock, x);
     selectedElement = null;
   };
 
@@ -246,6 +258,4 @@ function setDragEvents() {
   svg.addEventListener("touchmove", drag, { passive: false });
   svg.addEventListener("touchend", endDrag);
   svg.addEventListener("touchcancel", endDrag);
-
-  updateZOrder();
 }
