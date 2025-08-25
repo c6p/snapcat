@@ -2,11 +2,11 @@ import { randf } from "./utils";
 
 const WIDTH = 640;
 const HEIGHT = 640;
-const DOCK_STEP = 60;
+const ROW_STEP = 60;
 const STEP_OFFSET = 10;
-const DOCK_MIN = HEIGHT - 100;
+const ROW_MIN = HEIGHT - 100;
 
-const dockElements = new Map();
+const rowElements = new Map();
 let highlighted: SVGGraphicsElement[] = [];
 
 export function returnToMenu(app: HTMLDivElement) {
@@ -29,9 +29,9 @@ export function returnToMenu(app: HTMLDivElement) {
 function startGame(app: HTMLDivElement) {
   console.log("Game started");
 
-  const dockCount = 5;
-  const docks = Array.from({ length: dockCount }, (_, i) =>
-    createDock(dockCount - i - 1)
+  const rowCount = 5;
+  const rows = Array.from({ length: rowCount }, (_, i) =>
+    createRow(rowCount - i - 1)
   ).join("");
 
   const catCount = 9;
@@ -46,7 +46,7 @@ function startGame(app: HTMLDivElement) {
 
   app.innerHTML = `
   <svg id="game" width="100%" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" >
-    ${docks}
+    ${rows}
     ${cats}
   </svg>
   `;
@@ -56,9 +56,9 @@ function startGame(app: HTMLDivElement) {
   for (const cat of document.querySelectorAll<SVGGeometryElement>(
     `.draggable`
   )) {
-    putElementInDock(
+    putElementInRow(
       cat,
-      document.querySelector(`#dock${rand(0, dockCount - 1)}`),
+      document.querySelector(`#row${rand(0, rowCount - 1)}`),
       WIDTH / 2
     );
   }
@@ -89,64 +89,66 @@ function createCat(_index: number, width: number, height: number): string {
   </g>`;
 }
 
-function createDock(index: number) {
-  const y = DOCK_MIN - DOCK_STEP * index;
-const step = DOCK_STEP / 2;
+function createRow(index: number) {
+  const y = ROW_MIN - ROW_STEP * index;
+  const step = ROW_STEP / 2;
   const x = 10 + index * 10;
   const y2 = y + step - STEP_OFFSET;
-  return `<g class="dock" id="dock${index}">
+  return `<g class="row" id="row${index}">
 <polygon points="${x},${y} ${WIDTH - x},${y} ${WIDTH - x + 10},${
     y + step
   } ${x - 10},${y + step}" fill="#e0e0e0"/>
     <rect x="${x - 10}" y="${y + step}" width="${
     WIDTH - 2 * x + 20
   }" height="${step}" fill="#a0a0a0"/>
-    <line class="dock-line" x1="0" y1="${y2}" x2="${WIDTH}" y2="${y2}" />
+    <line class="row-line" x1="0" y1="${y2}" x2="${WIDTH}" y2="${y2}" />
   </g>`;
 }
 
-function putElementInDock(
-  element: SVGGeometryElement,
-  dock: Element,
-  x: number
-) {
+function putElementInRow(element: SVGGeometryElement, row: Element, x: number) {
   const height = element.getBBox().height;
-  const dockY = parseFloat(
-    dock.querySelector(".dock-line")!.getAttribute("y1")!
-  );
-  element.setAttribute("transform", `translate(${x}, ${dockY - height})`);
+  const rowY = parseFloat(row.querySelector(".row-line")!.getAttribute("y1")!);
+  element.setAttribute("transform", `translate(${x}, ${rowY - height})`);
 
-  dockElements.get(dock.id).push(element);
-  element.dataset.dockId = dock.id;
-  resolveCollisions(element, dock.id);
-  dock.appendChild(element); // update z order
+  rowElements.get(row.id).push(element);
+  element.dataset.rowId = row.id;
+  resolveCollisions(element, row.id);
+  row.appendChild(element); // update z order
+}
+
+function inSameColumn(el: SVGGraphicsElement, x: number, width: number) {
+  const _x = el.transform.baseVal.getItem(0).matrix.e;
+  const _width = el.getBBox().width;
+  return _x < x + width && _x + _width > x;
+}
+
+function getRows() {
+  return [...document.querySelectorAll(".row")];
+}
+
+function getElements(row: Element | undefined) {
+  return [
+    ...(row?.querySelectorAll(".draggable") ?? []),
+  ] as SVGGraphicsElement[];
 }
 
 function findNeighbours(element: SVGGraphicsElement) {
   const x = element.transform.baseVal.getItem(0).matrix.e;
   const width = element.getBBox().width;
-  const dockId = element.dataset.dockId;
-  const docks = [...document.querySelectorAll(".dock")];
+  const rowId = element.dataset.rowId;
+  const rows = getRows();
 
-  const getElements = (dockIndex: number) =>
-    [
-      ...(docks.at(dockIndex)?.querySelectorAll(".draggable") ?? []),
-    ] as SVGGraphicsElement[];
-
-  const neighbours = (dockIndex: number) => {
-    const elements = getElements(dockIndex);
-    return elements.filter((el) => {
-      const _x = el.transform.baseVal.getItem(0).matrix.e;
-      const _width = el.getBBox().width;
-      return _x < x + width && _x + _width > x;
-    });
+  const neighbours = (rowIndex: number) => {
+    const elements = getElements(rows.at(rowIndex));
+    return elements.filter((el) => inSameColumn(el, x, width));
   };
 
-  const dockIndex = docks.findIndex((dock) => dock.id === dockId);
-  const allNeighbours = [-1, 0, 1].map((i) => neighbours(dockIndex + i));
+  const rowIndex = rows.findIndex((row) => row.id === rowId);
+  const allNeighbours = [-1, 0, 1].map((i) => neighbours(rowIndex + i));
 
   return allNeighbours;
 }
+
 
 function highlightElements(elements: SVGGraphicsElement[]) {
   highlighted = elements;
@@ -158,8 +160,8 @@ function unhighlightElements() {
   highlighted = [];
 }
 
-  const resolveCollisions = (intruder: any, dockId: string) => {
-    const elements = dockElements.get(dockId);
+const resolveCollisions = (intruder: any, rowId: string) => {
+  const elements = rowElements.get(rowId);
     const spacing = -5;
     const transform = intruder.transform.baseVal.getItem(0).matrix;
     const left = transform.e;
@@ -214,15 +216,15 @@ function unhighlightElements() {
 
 function setDragEvents() {
   const svg = document.querySelector<SVGSVGElement>("#game")!;
-  const docks = document.querySelectorAll(".dock");
+  const rows = document.querySelectorAll(".row");
   const draggableElements = document.querySelectorAll(".draggable");
 
   let selectedElement: SVGGeometryElement | null = null;
   let oldPos = { x: 0, y: 0 };
   let offset = { x: 0, y: 0 };
 
-  // Initialize dock tracking
-  docks.forEach((dock) => dockElements.set(dock.id, []));
+  // Initialize row tracking
+  rows.forEach((row) => rowElements.set(row.id, []));
 
   const getMousePosition = (evt: MouseEvent | TouchEvent) => {
     const ctm = svg.getScreenCTM()!;
@@ -247,8 +249,8 @@ const [prev, cur, next] = findNeighbours(selectedElement);
     oldPos = { x: transform.e, y: transform.f };
     offset = { x: mousePos.x - transform.e, y: mousePos.y - transform.f };
 
-    // Remove from docks
-    for (const [, elements] of dockElements.entries()) {
+    // Remove from rows
+    for (const [, elements] of rowElements.entries()) {
       const index = elements.indexOf(selectedElement);
       if (index > -1) {
         elements.splice(index, 1);
@@ -275,27 +277,27 @@ const [prev, cur, next] = findNeighbours(selectedElement);
     const mousePos = getMousePosition(evt);
 const { f } = selectedElement.transform.baseVal.getItem(0).matrix;
     const { height } = selectedElement.getBBox();
-    let activeDock = null;
+    let activeRow = null;
 
-    // Find active dock
-    for (const dock of docks) {
-      const dockLine = dock.querySelector(".dock-line");
-      const dockY = parseFloat(dockLine!.getAttribute("y1")!);
+    // Find active row
+    for (const row of rows) {
+      const rowLine = row.querySelector(".row-line");
+      const rowY = parseFloat(rowLine!.getAttribute("y1")!);
 const y = f + height;
-      if (y > dockY - DOCK_STEP && y <= dockY + STEP_OFFSET) {
-        activeDock = dock;
+      if (y > rowY - ROW_STEP && y <= rowY + STEP_OFFSET) {
+        activeRow = row;
         break;
       }
     }
 
     let x = mousePos.x - offset.x;
-    if (!activeDock) {
+    if (!activeRow) {
       // revert
-      activeDock = document.getElementById(selectedElement.dataset.dockId!);
+      activeRow = document.getElementById(selectedElement.dataset.rowId!);
       x = oldPos.x;
     }
 
-    putElementInDock(selectedElement, activeDock, x);
+    putElementInRow(selectedElement, activeRow, x);
     selectedElement = null;
 unhighlightElements();
   };
