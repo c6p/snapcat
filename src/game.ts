@@ -2,7 +2,7 @@ import { randf } from "./utils";
 
 const WIDTH = 640;
 const HEIGHT = 640;
-const ROW_STEP = 60;
+const ROW_HEIGHT = 60;
 const STEP_OFFSET = 10;
 const ROW_MIN = HEIGHT - 100;
 
@@ -90,17 +90,17 @@ function createCat(_index: number, width: number, height: number): string {
 }
 
 function createRow(index: number) {
-  const y = ROW_MIN - ROW_STEP * index;
-  const step = ROW_STEP / 2;
+  const y = ROW_MIN - ROW_HEIGHT * index;
+  const step = ROW_HEIGHT / 2 - 10;
   const x = 10 + index * 10;
   const y2 = y + step - STEP_OFFSET;
   return `<g class="row" id="row${index}">
 <polygon points="${x},${y} ${WIDTH - x},${y} ${WIDTH - x + 10},${
     y + step
   } ${x - 10},${y + step}" fill="#e0e0e0"/>
-    <rect x="${x - 10}" y="${y + step}" width="${
-    WIDTH - 2 * x + 20
-  }" height="${step}" fill="#a0a0a0"/>
+    <rect x="${x - 10}" y="${y + step}" width="${WIDTH - 2 * x + 20}" height="${
+    ROW_HEIGHT - step
+  }" fill="#a0a0a0"/>
     <line class="row-line" x1="0" y1="${y2}" x2="${WIDTH}" y2="${y2}" />
   </g>`;
 }
@@ -284,7 +284,7 @@ const { f } = selectedElement.transform.baseVal.getItem(0).matrix;
       const rowLine = row.querySelector(".row-line");
       const rowY = parseFloat(rowLine!.getAttribute("y1")!);
 const y = f + height;
-      if (y > rowY - ROW_STEP && y <= rowY + STEP_OFFSET) {
+      if (y > rowY - ROW_HEIGHT && y <= rowY + STEP_OFFSET) {
         activeRow = row;
         break;
       }
