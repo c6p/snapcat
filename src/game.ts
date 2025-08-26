@@ -70,7 +70,7 @@ function startGame(app: HTMLDivElement) {
   )) {
     putElementInRow(
       cat,
-      document.querySelector(`#row${rand(0, rowCount - 1)}`),
+      document.querySelector(`#row${rand(0, rowCount - 1)}`)!,
       WIDTH / 2
     );
   }
@@ -326,7 +326,7 @@ const y = f + height;
     let x = mousePos.x - offset.x;
     if (!activeRow) {
       // revert
-      activeRow = document.getElementById(selectedElement.dataset.rowId!);
+      activeRow = document.getElementById(selectedElement.dataset.rowId!)!;
       x = oldPos.x;
     }
 
