@@ -4,6 +4,7 @@ import { CAT_COLORS, type CatPattern } from "./colors";
 const WIDTH = 640;
 const HEIGHT = 640;
 const ROW_HEIGHT = 60;
+const ROW_PROXIMITY_MULTIPLIER = 2;
 const STEP_OFFSET = 10;
 const ROW_MIN = HEIGHT - 100;
 
@@ -182,6 +183,35 @@ function findNeighbours(element: SVGGraphicsElement) {
   return allNeighbours;
 }
 
+function withinDistance(
+  a: SVGGraphicsElement,
+  b: SVGGraphicsElement,
+  dist: number
+) {
+  const ab = a.getBBox();
+  const bb = b.getBBox();
+  const at = a.transform.baseVal.getItem(0).matrix;
+  const bt = b.transform.baseVal.getItem(0).matrix;
+
+  // NOTE: may also use ab.x and y in calculations
+  const dx = Math.max(
+    0,
+    at.e > bt.e ? at.e - (bt.e + bb.width) : bt.e - (at.e + ab.width)
+  );
+  const dy = Math.abs(at.f + ab.height - (bt.f + bb.height));
+  const distance = Math.sqrt(dx * dx + dy * dy * ROW_PROXIMITY_MULTIPLIER);
+
+  if (distance <= dist) console.warn(at, ab, bt, bb, dx, dy, distance, dist);
+  return distance <= dist;
+}
+
+function findWithinDistance(element: SVGGraphicsElement, dist: number) {
+  const rows = getRows();
+  const elements = Array.from(rows).flatMap((row) => getElements(row));
+  return elements.filter(
+    (el) => element !== el && withinDistance(element, el, dist)
+  );
+}
 
 function highlightElements(elements: SVGGraphicsElement[]) {
   highlighted = elements;
@@ -273,6 +303,7 @@ function setDragEvents() {
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
 const [prev, cur, next] = findNeighbours(selectedElement);
+    const near = findWithinDistance(selectedElement, 200);
 
     // Bring element to the very top while dragging
     svg.appendChild(selectedElement);
@@ -291,7 +322,8 @@ const [prev, cur, next] = findNeighbours(selectedElement);
       }
     }
 
-    highlightElements([...cur, ...prev, ...next]);
+    //highlightElements([...cur, ...prev, ...next]);
+    highlightElements(near);
   };
 
   const drag = (evt: MouseEvent | TouchEvent) => {
