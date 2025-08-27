@@ -14,8 +14,6 @@ const Spatial = {
   Contained: 2,
 } as const;
 
-let highlighted: SVGGraphicsElement[] = [];
-
 export function returnToMenu(app: HTMLDivElement) {
   console.debug("Returning to menu");
 
@@ -168,17 +166,6 @@ function getRowElements(row: Element | undefined) {
   ] as SVGGraphicsElement[];
 }
 
-function findNeighbours(element: SVGGraphicsElement) {
-  const elements = relativeElements(element);
-  return elements.filter(({ neighbour }) => neighbour).map(({ el }) => el);
-}
-
-function findWithinDistance(element: SVGGraphicsElement, distance: number) {
-  const elements = relativeElements(element);
-  console.warn(elements);
-  return elements.filter(({ dist }) => dist <= distance).map(({ el }) => el);
-}
-
 function calcDistance(
   el: SVGGraphicsElement,
   bbox: DOMRect,
@@ -206,14 +193,14 @@ function calcDistance(
   return { dx, dy, xSpatial };
 }
 
-function relativeElements(element: SVGGraphicsElement) {
+function getRelativeElements(element: SVGGraphicsElement, rowIndex: number) {
   const bbox = element.getBBox();
   const transform = element.transform.baseVal.getItem(0).matrix;
-  const index = parseInt(element.parentElement?.dataset.index!);
   const rows = getRows();
 
-  return Array.from(rows).flatMap((row, i) => {
-    const dRow = index - i;
+  return Array.from(rows).flatMap((row) => {
+    const index = parseInt(row.dataset.index!);
+    const dRow = rowIndex - index;
     return getRowElements(row)
       .filter((el) => el !== element)
       .map((el) => {
@@ -234,14 +221,14 @@ function relativeElements(element: SVGGraphicsElement) {
   });
 }
 
-function highlightElements(elements: SVGGraphicsElement[]) {
-  highlighted = elements;
-  elements.forEach((el) => el?.classList.add("highlight"));
+function markElements(elements: SVGGraphicsElement[], mark: string) {
+  elements.forEach((el) => el?.classList.add(mark));
 }
 
-function unhighlightElements() {
-  highlighted.forEach((el) => el?.classList.remove("highlight"));
-  highlighted = [];
+function unmarkElements(mark: string) {
+  document
+    .querySelectorAll("." + mark)
+    .forEach((el) => el?.classList.remove(mark));
 }
 
 const resolveCollisions = (intruder: SVGGraphicsElement, row: SVGGElement) => {
@@ -320,9 +307,14 @@ function setDragEvents() {
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
     oldRow = selectedElement.parentNode! as SVGGElement;
+    const rowIndex = parseInt(oldRow.dataset.index!);
 
-    const [_prev, _cur, _next] = findNeighbours(selectedElement);
-    const near = findWithinDistance(selectedElement, 200);
+    const elements = getRelativeElements(selectedElement, rowIndex);
+    const touch = elements.filter(({ touch }) => touch).map(({ el }) => el);
+    const far = elements.filter(({ dist }) => dist > 200).map(({ el }) => el);
+    markElements([selectedElement], "selected");
+    markElements(touch, "touch");
+    markElements(far, "far");
 
     // Bring element to the very top while dragging
     svg.appendChild(selectedElement);
@@ -331,9 +323,6 @@ function setDragEvents() {
     const transform = selectedElement.transform.baseVal.getItem(0).matrix;
     oldPos = { x: transform.e, y: transform.f };
     offset = { x: mousePos.x - transform.e, y: mousePos.y - transform.f };
-
-    //highlightElements([...cur, ...prev, ...next]);
-    highlightElements(near);
   };
 
   const drag = (evt: PointerEvent) => {
@@ -376,7 +365,10 @@ const y = f + height;
 
     putElementInRow(selectedElement, activeRow, x, resolve);
     selectedElement = null;
-unhighlightElements();
+
+    unmarkElements("selected");
+    unmarkElements("touch");
+    unmarkElements("far");
   };
 
   // Setup draggable elements
