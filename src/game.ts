@@ -8,7 +8,12 @@ const ROW_PROXIMITY_MULTIPLIER = 2;
 const STEP_OFFSET = 10;
 const ROW_MIN = HEIGHT - 100;
 
-const rowElements = new Map();
+const Spatial = {
+  Disjoint: 0,
+  Overlapping: 1,
+  Contained: 2,
+} as const;
+
 let highlighted: SVGGraphicsElement[] = [];
 
 export function returnToMenu(app: HTMLDivElement) {
@@ -69,11 +74,7 @@ function startGame(app: HTMLDivElement) {
   for (const cat of document.querySelectorAll<SVGGeometryElement>(
     `.draggable`
   )) {
-    putElementInRow(
-      cat,
-      document.querySelector(`#row${rand(0, rowCount - 1)}`)!,
-      WIDTH / 2
-    );
+    putElementInRow(cat, getRowAt(rand(0, rowCount - 1)), WIDTH / 2);
   }
 }
 
@@ -128,7 +129,7 @@ function createRow(index: number) {
   const step = ROW_HEIGHT / 2 - 10;
   const x = 10 + index * 10;
   const y2 = y + step - STEP_OFFSET;
-  return `<g class="row" id="row${index}">
+  return `<g class="row" data-index="${index}">
 <polygon points="${x},${y} ${WIDTH - x},${y} ${WIDTH - x + 10},${
     y + step
   } ${x - 10},${y + step}" fill="#e0e0e0"/>
@@ -139,78 +140,98 @@ function createRow(index: number) {
   </g>`;
 }
 
-function putElementInRow(element: SVGGeometryElement, row: Element, x: number) {
+function putElementInRow(
+  element: SVGGeometryElement,
+  row: SVGGElement,
+  x: number,
+  resolve = true
+) {
   const height = element.getBBox().height;
   const rowY = parseFloat(row.querySelector(".row-line")!.getAttribute("y1")!);
   element.setAttribute("transform", `translate(${x}, ${rowY - height})`);
 
-  rowElements.get(row.id).push(element);
-  element.dataset.rowId = row.id;
-  resolveCollisions(element, row.id);
+  if (resolve) resolveCollisions(element, row);
   row.appendChild(element); // update z order
 }
 
-function inSameColumn(el: SVGGraphicsElement, x: number, width: number) {
-  const _x = el.transform.baseVal.getItem(0).matrix.e;
-  const _width = el.getBBox().width;
-  return _x < x + width && _x + _width > x;
+function getRowAt(i: number) {
+  return document.querySelector(`.row[data-index="${i}"]`) as SVGGElement;
 }
 
 function getRows() {
-  return [...document.querySelectorAll(".row")];
+  return [...document.querySelectorAll(".row")] as SVGGElement[];
 }
 
-function getElements(row: Element | undefined) {
+function getRowElements(row: Element | undefined) {
   return [
     ...(row?.querySelectorAll(".draggable") ?? []),
   ] as SVGGraphicsElement[];
 }
 
 function findNeighbours(element: SVGGraphicsElement) {
-  const x = element.transform.baseVal.getItem(0).matrix.e;
-  const width = element.getBBox().width;
-  const rowId = element.dataset.rowId;
-  const rows = getRows();
-
-  const neighbours = (rowIndex: number) => {
-    const elements = getElements(rows.at(rowIndex));
-    return elements.filter((el) => inSameColumn(el, x, width));
-  };
-
-  const rowIndex = rows.findIndex((row) => row.id === rowId);
-  const allNeighbours = [-1, 0, 1].map((i) => neighbours(rowIndex + i));
-
-  return allNeighbours;
+  const elements = relativeElements(element);
+  return elements.filter(({ neighbour }) => neighbour).map(({ el }) => el);
 }
 
-function withinDistance(
-  a: SVGGraphicsElement,
-  b: SVGGraphicsElement,
-  dist: number
+function findWithinDistance(element: SVGGraphicsElement, distance: number) {
+  const elements = relativeElements(element);
+  console.warn(elements);
+  return elements.filter(({ dist }) => dist <= distance).map(({ el }) => el);
+}
+
+function calcDistance(
+  el: SVGGraphicsElement,
+  bbox: DOMRect,
+  transform: DOMMatrix
 ) {
-  const ab = a.getBBox();
-  const bb = b.getBBox();
-  const at = a.transform.baseVal.getItem(0).matrix;
-  const bt = b.transform.baseVal.getItem(0).matrix;
+  const aBox = el.getBBox();
+  const aTransform = el.transform.baseVal.getItem(0).matrix;
 
-  // NOTE: may also use ab.x and y in calculations
-  const dx = Math.max(
-    0,
-    at.e > bt.e ? at.e - (bt.e + bb.width) : bt.e - (at.e + ab.width)
-  );
-  const dy = Math.abs(at.f + ab.height - (bt.f + bb.height));
-  const distance = Math.sqrt(dx * dx + dy * dy * ROW_PROXIMITY_MULTIPLIER);
+  const aLeft = aTransform.e;
+  const aRight = aTransform.e + aBox.width;
+  const bLeft = transform.e;
+  const bRight = transform.e + bbox.width;
 
-  if (distance <= dist) console.warn(at, ab, bt, bb, dx, dy, distance, dist);
-  return distance <= dist;
+  const dx = Math.max(0, aLeft >= bLeft ? aLeft - bRight : bLeft - aRight);
+  const dy = Math.abs(aTransform.f + aBox.height - (transform.f + bbox.height));
+
+  const xSpatial =
+    dx > 0
+      ? Spatial.Disjoint
+      : (aLeft >= bLeft && aRight <= bRight) ||
+        (aLeft <= bLeft && aRight >= bRight)
+      ? Spatial.Contained
+      : Spatial.Overlapping;
+
+  return { dx, dy, xSpatial };
 }
 
-function findWithinDistance(element: SVGGraphicsElement, dist: number) {
+function relativeElements(element: SVGGraphicsElement) {
+  const bbox = element.getBBox();
+  const transform = element.transform.baseVal.getItem(0).matrix;
+  const index = parseInt(element.parentElement?.dataset.index!);
   const rows = getRows();
-  const elements = Array.from(rows).flatMap((row) => getElements(row));
-  return elements.filter(
-    (el) => element !== el && withinDistance(element, el, dist)
-  );
+
+  return Array.from(rows).flatMap((row, i) => {
+    const dRow = index - i;
+    return getRowElements(row)
+      .filter((el) => el !== element)
+      .map((el) => {
+        const { dx, dy, xSpatial } = calcDistance(el, bbox, transform);
+        return {
+          el,
+          dRow,
+          dx,
+          dy,
+          xSpatial,
+          dist: Math.sqrt(dx * dx + dy * dy * ROW_PROXIMITY_MULTIPLIER),
+          touch:
+            (dRow === 0 && xSpatial === Spatial.Overlapping) ||
+            (Math.abs(dRow) === 1 && xSpatial === Spatial.Contained),
+          neighbour: Math.abs(dRow) <= 1 && xSpatial === Spatial.Overlapping,
+        };
+      });
+  });
 }
 
 function highlightElements(elements: SVGGraphicsElement[]) {
@@ -223,8 +244,8 @@ function unhighlightElements() {
   highlighted = [];
 }
 
-const resolveCollisions = (intruder: any, rowId: string) => {
-  const elements = rowElements.get(rowId);
+const resolveCollisions = (intruder: SVGGraphicsElement, row: SVGGElement) => {
+  const elements = getRowElements(row);
     const spacing = -5;
     const transform = intruder.transform.baseVal.getItem(0).matrix;
     const left = transform.e;
@@ -279,20 +300,16 @@ const resolveCollisions = (intruder: any, rowId: string) => {
 
 function setDragEvents() {
   const svg = document.querySelector<SVGSVGElement>("#game")!;
-  const rows = document.querySelectorAll(".row");
+  const rows = getRows();
   const draggableElements = document.querySelectorAll(".draggable");
 
   let selectedElement: SVGGeometryElement | null = null;
+  let oldRow: SVGGElement;
   let oldPos = { x: 0, y: 0 };
   let offset = { x: 0, y: 0 };
 
-  // Initialize row tracking
-  rows.forEach((row) => rowElements.set(row.id, []));
-
   const getMousePosition = (evt: PointerEvent) => {
     const ctm = svg.getScreenCTM()!;
-    const client =
-      "touches" in evt ? evt.touches?.[0] ?? evt.changedTouches[0] : evt;
     return {
       x: (evt.clientX - ctm.e) / ctm.a,
       y: (evt.clientY - ctm.f) / ctm.d,
@@ -302,7 +319,9 @@ function setDragEvents() {
   const startDrag = (evt: PointerEvent) => {
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
-const [prev, cur, next] = findNeighbours(selectedElement);
+    oldRow = selectedElement.parentNode! as SVGGElement;
+
+    const [_prev, _cur, _next] = findNeighbours(selectedElement);
     const near = findWithinDistance(selectedElement, 200);
 
     // Bring element to the very top while dragging
@@ -312,15 +331,6 @@ const [prev, cur, next] = findNeighbours(selectedElement);
     const transform = selectedElement.transform.baseVal.getItem(0).matrix;
     oldPos = { x: transform.e, y: transform.f };
     offset = { x: mousePos.x - transform.e, y: mousePos.y - transform.f };
-
-    // Remove from rows
-    for (const [, elements] of rowElements.entries()) {
-      const index = elements.indexOf(selectedElement);
-      if (index > -1) {
-        elements.splice(index, 1);
-        break;
-      }
-    }
 
     //highlightElements([...cur, ...prev, ...next]);
     highlightElements(near);
@@ -356,13 +366,15 @@ const y = f + height;
     }
 
     let x = mousePos.x - offset.x;
+    let resolve = true;
     if (!activeRow) {
       // revert
-      activeRow = document.getElementById(selectedElement.dataset.rowId!)!;
+      activeRow = oldRow;
       x = oldPos.x;
+      resolve = false;
     }
 
-    putElementInRow(selectedElement, activeRow, x);
+    putElementInRow(selectedElement, activeRow, x, resolve);
     selectedElement = null;
 unhighlightElements();
   };
