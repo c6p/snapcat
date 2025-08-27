@@ -48,7 +48,7 @@ button:focus-visible {
   filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.7));
 }
 
-.draggable .body:hover {
+.draggable:hover .body {
   stroke: #fff;
   stroke-width: 2px;
 }

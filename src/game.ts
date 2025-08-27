@@ -98,10 +98,10 @@ function createCat(
     }
     ${
       patterns.includes("tuxedo")
-        ? '<path id="belly" fill="#fbfcfc" d="M16 151.6c-6.8-6-27.6-7.6-37.6-.5s-10.5 40.1-13 47c9.6 2.2 27 2.4 32.9 2.4 12.4 0 22.7-1 26.2-1.8-1.5-7.8-3.5-42.7-8.6-47.1"/>'
+        ? '<path id="belly" fill="#fbfcfc" stroke="none" d="M16 151.6c-6.8-6-27.6-7.6-37.6-.5s-10.5 40.1-13 47c9.6 2.2 27 2.4 32.9 2.4 12.4 0 22.7-1 26.2-1.8-1.5-7.8-3.5-42.7-8.6-47.1"/>'
         : ""
     }
-    <path id="ear" fill="#ffd0e8" d="M23.7 56.2c-1.8 0-5.8 8.6-6.2 10.7-.3 1.4 10 1.8 10.4.6.3-1.2-3-11.4-4.2-11.3z"/>
+    <path id="ear" fill="#ffd0e8" stroke="none" d="M23.7 56.2c-1.8 0-5.8 8.6-6.2 10.7-.3 1.4 10 1.8 10.4.6.3-1.2-3-11.4-4.2-11.3z"/>
     <path id="eye" stroke="#9cca1cff" stroke-width="3.1" d="m10 89 4 1" />
     <g id="hand${index}" transform="rotate(90,24,135)">
       <path id="paw" fill="${
