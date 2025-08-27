@@ -289,17 +289,17 @@ function setDragEvents() {
   // Initialize row tracking
   rows.forEach((row) => rowElements.set(row.id, []));
 
-  const getMousePosition = (evt: MouseEvent | TouchEvent) => {
+  const getMousePosition = (evt: PointerEvent) => {
     const ctm = svg.getScreenCTM()!;
     const client =
       "touches" in evt ? evt.touches?.[0] ?? evt.changedTouches[0] : evt;
     return {
-      x: (client.clientX - ctm.e) / ctm.a,
-      y: (client.clientY - ctm.f) / ctm.d,
+      x: (evt.clientX - ctm.e) / ctm.a,
+      y: (evt.clientY - ctm.f) / ctm.d,
     };
   };
 
-  const startDrag = (evt: MouseEvent | TouchEvent) => {
+  const startDrag = (evt: PointerEvent) => {
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
 const [prev, cur, next] = findNeighbours(selectedElement);
@@ -326,7 +326,7 @@ const [prev, cur, next] = findNeighbours(selectedElement);
     highlightElements(near);
   };
 
-  const drag = (evt: MouseEvent | TouchEvent) => {
+  const drag = (evt: PointerEvent) => {
     if (!selectedElement) return;
     evt.preventDefault();
     const mousePos = getMousePosition(evt);
@@ -336,7 +336,7 @@ const [prev, cur, next] = findNeighbours(selectedElement);
     );
   };
 
-  const endDrag = (evt: MouseEvent | TouchEvent) => {
+  const endDrag = (evt: PointerEvent) => {
     if (!selectedElement) return;
 
     const mousePos = getMousePosition(evt);
@@ -369,15 +369,11 @@ unhighlightElements();
 
   // Setup draggable elements
   draggableElements.forEach((el) => {
-    el.addEventListener("mousedown", startDrag as any);
-    el.addEventListener("touchstart", startDrag as any, { passive: false });
+    el.addEventListener("pointerdown", startDrag as any);
   });
 
   // Global listeners
-  svg.addEventListener("mousemove", drag);
-  svg.addEventListener("mouseup", endDrag);
-  svg.addEventListener("mouseleave", endDrag);
-  svg.addEventListener("touchmove", drag, { passive: false });
-  svg.addEventListener("touchend", endDrag);
-  svg.addEventListener("touchcancel", endDrag);
+  svg.addEventListener("pointermove", drag);
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointerleave", endDrag);
 }
