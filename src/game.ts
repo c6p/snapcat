@@ -1,5 +1,10 @@
-import { choose, rand, randb, randf } from "./utils";
+import { choose, rand, randb, randf, randomItem } from "./utils";
 import { CAT_COLORS, type CatPattern } from "./colors";
+import {
+  ACCESSORIES,
+  type Accessory,
+  type AccessoryPlace,
+} from "./accessories";
 
 const WIDTH = 640;
 const HEIGHT = 640;
@@ -47,20 +52,77 @@ function startGame(app: HTMLDivElement) {
     const width = randf(0.5, 1.3);
     const height = randf(0.5, 1.3);
     const color = choose(colors);
+    const accessories = Object.entries(ACCESSORIES)
+      .map(([place, items]) => [randomItem(items), place])
+      .filter(([item, _place]) => item !== null) as [
+      Accessory,
+      AccessoryPlace
+    ][];
     cats += createCat(
       i,
       width,
       height,
       color,
-      patterns.filter(() => randb())
+      patterns.filter(() => randb()),
+      accessories
     );
   }
 
+  const faceDefs = `
+    <g id="1" stroke-width="2" >
+      <use xlink:href="#eye1" stroke-width="2"  transform="matrix(-.997 0 0 .992 99 .3)"/>
+      <path id="eye1" fill="none" stroke-width="3" d="m65 36.6 8.5 4.9"  />
+      <path fill="none" stroke-linejoin="miter" stroke-width="2" d="M57.6 59.4c.3-3.4-1.2-6.3-7.4-7.8l-.4-7 .4 7c-7.2 1-7 7.8-7 7.8" />
+    </g>
+    <g id="2" stroke-width="2" >
+      <use xlink:href="#eye2" stroke-width="2"  transform="matrix(-.997 0 0 .992 99 .3)"/>
+      <path id="eye2" fill="none" stroke-width="5" d="M67.7 38.4h.4"  />
+      <path fill="none" stroke-linejoin="miter" stroke-width="2" d="M49.8 45.3v11.2" />
+    </g>
+    <g id="3" stroke-width="2" >
+      <use xlink:href="#eye3" transform="matrix(-.997 0 0 .992 99.9 .3)"/>
+      <path id="eye3" fill="none" d="M75.7 34.3c-.6 3.6-10.3 2.7-10.8-1"  />
+      <path fill="none" d="m49.8 45 .5 11.8s-1 .8-1 1.3.7 1.1 1.1 1.1c.5 0 1-.6 1-1.1 0-.5-1.1-1.3-1.1-1.3"  paint-order="fill markers stroke"/>
+    </g>
+    <g id="4" stroke-width="2" >
+      <use xlink:href="#eye4" transform="matrix(-.997 0 0 .992 99 .3)"/>
+      <path id="eye4" fill="none" d="M65.4 37.4c-1.4-4.4 6.5-6.8 8-.6"  />
+      <path fill="none" stroke-linejoin="miter" d="M62.7 52.9c-1 3.7-13.2 7.8-13-1.3V45v6.8c-.3 9.1-11.9 6.3-13 1" />
+    </g>
+    <g id="5" stroke-width="2" >
+      <use xlink:href="#eye5" transform="matrix(-.997 0 0 .992 100.3 .3)"/>
+      <path id="eye5" fill="none" d="M76.6 36.8c-19 .7-16 .3-1.4-5"  />
+      <path fill="#ff8080" stroke-linejoin="miter" d="M60.2 49.3C50.5 59.8 49.8 45 49.8 45s0 15.3-10.4 4c0 0-.6 12 10.2 12 10.8-.1 10.6-11.7 10.6-11.7Z" />
+    </g>
+  `;
+  const accessoryDefs = `
+    <path id="glasses" fill="#1a1a1a" stroke="#eee" stroke-width=".5" d="M28.2 24.3c-5 .1-10 .4-14.7 1.8-3.2 3 1.7 6 2 9 1.1 4.7 2 10.4 6.5 13 4.4 2.3 9.6 2 14.2 1.2 5.3-1.3 8.9-6 10.4-11 .1-3.7 5-5.2 6.3-1.3 1 3 1.8 6 4.1 8.3 2.8 3.2 7 4.6 11.1 4.6 5 .3 10.9-1 13.4-5.7 2-3.5 2.4-7.7 3.4-11.6 3-1.2 3.8-6.8-.3-6.9a61.4 61.4 0 0 0-31.4 1.6c-6.1 1.3-12-1.8-18-2.4-2.3-.4-4.7-.6-7-.6Zm41.5 3c3.7.2 8 .1 11 2.7 2.1 3.4.8 7.7 0 11.3a9 9 0 0 1-8.1 6.4c-5.5 1-12-.1-15.2-5.2A14 14 0 0 1 54.7 32c1.5-3.5 5.7-4 9-4.4 2-.3 4-.4 6-.4zm-39.5 0c4.7.3 10 .2 14 3.1 2.4 3.2.6 7.4-1 10.6-2 3.9-6 7-10.5 6.8-4.5.5-10.2 0-12.6-4.5a15.3 15.3 0 0 1-1.3-12.6c2.6-3.5 7.6-3 11.4-3.4z" />
+    <path id="sunglasses" fill="#3f0a00ff" fill-opacity=".9" stroke="#eee" stroke-width=".5" d="M28.2 24.3c-5 .1-10 .4-14.7 1.8-3.2 3 1.7 6 2 9 1.1 4.7 2 10.4 6.5 13 4.4 2.3 9.6 2 14.2 1.2 5.3-1.3 8.9-6 10.4-11 .1-3.7 5-5.2 6.3-1.3 1 3 1.8 6 4.1 8.3 2.8 3.2 7 4.6 11.1 4.6 5 .3 10.9-1 13.4-5.7 2-3.5 2.4-7.7 3.4-11.6 3-1.2 3.8-6.8-.3-6.9a61.4 61.4 0 0 0-31.4 1.6c-6.1 1.3-12-1.8-18-2.4-2.3-.4-4.7-.6-7-.6Z" />
+    <path id="cap" fill="rgba(248, 67, 43, 1)" stroke="#231f20" stroke-miterlimit="10" stroke-width=".8" d="m27 12.6 22.2-.2-.3-20.3.3 20.4h21.7M48.2-8.3C30.7-8.4 26.1 1 26.1 12.8l1.2-.3s-3.7 5.6-2.6 7.8c2.6 5.5 12.6-1.3 24.7-1.3 12 0 21.5 6.8 24.1 1.3 1-2.2-2.6-7.7-2.6-7.8l1.2.3C72.1 2 65.1-8 49.4-8.4c-.7 0 5-1.2-.4-1.2-6.5 0 .2 1.2-.8 1.2z" />
+    <path id="beanie" fill="rgba(2, 185, 73, 1)" stroke="#231f20" stroke-miterlimit="10" stroke-width=".8" d="m42.9-12.3-.1-1a6.6 6.6 0 1 1 13 1M73 9.7l-5.2 11.9m0-12-5.3 12m0-12-5.2 12m0-12-5.2 12m0-12-5.3 12m0-12-5.2 12m0-12-5.3 12m0-12-5.2 12m0-12-5.2 12m47.1 0H25.8v-12h47.1Zm-44.1-12V7.2a20.6 20.6 0 0 1 41.2 0v2.4" />
+    <g id="hat" stroke="#231f20" stroke-miterlimit="10" stroke-width=".8" >
+      <path id="path8" fill="#deaa87" d="M49.5-12.5a20 20 0 0 0-9.6 2.3C33.9-6.9 29.4 0 29.4 11.3c-5-1.5-8-2.6-8.4-.4-1 4.3 11.6 9.2 28.5 9.2 17 0 29.6-4.9 28.6-9.2-.5-2.2-3.4-1.1-8.4.4 0-17-9.9-23.8-20.2-23.8Z"/>
+      <path id="path9-4" fill="#000" fill-opacity=".6" d="M69.8 11.4A47.8 47.8 0 0 1 50 14a52 52 0 0 1-20.6-2.7l.4-5.2a47.8 47.8 0 0 0 19.8 2.7c8.2 0 16-.6 19.8-2.7z"/>
+    </g>
+    <path id="band" fill="rgba(49, 144, 253, 1)" stroke="#231f20" stroke-miterlimit="10" stroke-width="1.1" d="M90.3 28c-7.8 2.3-23.4 2.8-40.1 2.8-16.8 0-34-.5-41.7-2.7l.7-5.2c7.7 2.2 23.4 2.7 40.1 2.7 16.7 0 32.3-.5 40-2.7z" />
+    <path id="tie" fill="url(#strips)" stroke="#999" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="1" d="M47.9 70.4 54 70l4.6 45.6-9 9.1L42 115z" />
+    <path id="bowtie" fill="rgba(204, 0, 0, 1)" stroke="#000" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="1" d="m50.7 70.7-.4 6.2 3.6-.3 11 4.9-.2-16.3-10.8 6 .2 5.6-.2-5.5-3.2-.2L39 64.6l-1 16.8L50.4 77" />
+  `;
   app.innerHTML = `
   <svg id="game" width="100%" height="100%" viewBox="0 0 ${WIDTH} ${HEIGHT}" >
   <defs>
-    <pattern id="tabby" width="100" height="100" patternTransform="rotate(90)scale(0.7)" patternUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="#fff"/><path fill="#e0e0e0" d="M100 20.234v41.641q-6.719 7.656-10.234 17.812-3.36 9.766-3.125 20.313h-3.438v-4.531q0-2.657.39-4.532l.626-3.359.703-3.281 2.265-7.656q1.329-4.22 2.813-7.344.781-1.719 2.812-4.453l2.891-4.297.86-2.578.312-2.735q.156-5-.547-13.203l-2.344-20.937Q92.656 8.516 92.422 0h6.797q-.078 6.172.078 10.156.156 5.547.703 10.078m0 49.532v20.468q-.469 2.11-.703 4.844L99.063 100H92.5l-.078-8.594q0-5.156.547-8.515.469-3.047 2.89-6.797zM79.219 100h-3.672l.39-8.36.938-8.359q1.016-6.953 1.875-10.781 1.328-5.86 3.36-10.313l2.5-6.015 1.562-6.328.547-5q.078-2.813-.703-4.844l-3.282-9.531-3.28-9.531q-1.876-6.094-2.735-10.313Q75.547 4.922 75.547 0h3.672q.078 8.516 2.422 17.031 2.343 8.282 6.718 15.782l-2.03-11.016-1.876-11.016-.86-5.312L83.126 0h3.516l.234 4.531.547 4.532 2.5 16.25 2.422 16.328q1.015 8.125.156 15.625l-.625 3.28q-.547 1.798-1.562 2.97l-1.875 1.953q-1.094 1.172-1.641 2.187-1.64 2.735-2.89 7.813l-2.423 8.047q-1.406 3.515-1.875 8.125-.39 3.125-.39 8.359m-6.406 0H64.53q-2.11-9.922-1.718-18.828.39-4.922 1.796-8.203l2.97-7.5q1.405-4.219 1.718-7.89.312-2.735-.39-5.313-.704-2.657-2.345-4.844-2.343-3.125-5.78-6.328l-.938 2.5-.86 2.656q-2.343 6.797-4.922 11.953-3.125 6.25-7.03 10.86-1.485 2.265-2.579 5.312-.781 2.344-1.484 5.781Q41.25 88.75 41.25 100h-6.484l.312-12.266q.39-6.718 1.64-12.265 1.72-7.344 4.844-11.407l2.344-2.5 2.344-2.5q2.5-2.968 3.906-6.875 1.328-3.671 1.485-7.734.156-5.156-.86-12.5L48.906 19.61Q47.578 8.516 47.97 0h10.078q-.625 12.188 1.875 22.11 2.422 9.218 8.515 16.25l5 5.234q3.047 3.203 4.375 5.781 2.657 4.922.938 12.266-1.016 4.609-3.906 10.859-1.172 2.578-1.797 5.86-.547 2.5-.781 6.093-.391 7.266.546 15.547m-14.765 0H47.969V89.453q.312-5.937 1.718-10.39 4.297-12.657 10.157-22.813l1.797-3.047 2.109-2.812q1.25 4.687-1.094 11.562-5.625 16.953-4.61 38.047m-29.296 0H17.969l.234-5.781.469-5.782L21.25 65.86l2.422-22.578q1.172-12.031-1.875-21.797-1.719 3.047-2.969 7.5l-2.031 7.813q-.469 1.719-.547 4.219l.078 4.218-.547 11.094-1.797 10.469Q12.5 74.062 12.11 77.266q-.39 2.734-.312 6.406l.234 6.406.39 5q.235 2.813.704 4.922H5.781V81.25l-.078-6.016Q1.563 81.797 0 89.844v-20.39q5.86-10.47 7.422-22.657 1.25-9.14.078-23.36L6.406 11.72Q5.86 4.844 5.781 0h7.344l1.406 11.328 1.094 11.328q1.25-2.422 1.797-6.015l.625-6.25.078-5.157L17.969 0h10.86q.077 2.969.702 6.953l1.172 6.797 1.64 11.094q.626 6.172.157 11.172-.547 4.297-2.031 9.687L27.5 55.078q-2.031 6.719-2.344 14.531-.078 3.75.625 8.36l1.563 8.203.703-2.422 4.531-18.672q2.344-10.312 3.594-18.828.625-3.984.625-9.062l-.313-9.141-1.093-13.984Q34.688 5.547 34.766 0h6.484q-.078 8.984 1.953 19.688l1.64 8.75q.938 5.078.938 8.75 0 3.828-1.015 7.5-.938 3.671-2.813 6.874-4.61 9.375-7.812 20.47-2.813 9.687-4.766 21.405-.703 3.75-.625 6.563M0 61.797V19.766l.781 4.375.703 4.453 2.344 13.984.235 1.563.234 2.343Q5.078 54.61 0 61.797M64.61 0h8.202q-.39 7.266.157 11.953l.86 4.531 1.25 4.532 3.593 13.672 3.36 13.671.546 2.657.156 2.656-2.343-6.406q-1.407-3.516-3.047-6.172l-4.14-6.64-4.298-6.563q-1.172-1.953-1.875-4.61-.547-1.875-.937-4.922Q64.844 9.453 64.609 0"/></pattern>
-    <path id="body" stroke-width="1.5" d="M-1.7 201c-14.8-.2-29.7-.6-44.2-4-5.7-.6-7.8-7.2-8.3-12.6a363 363 0 0 1 4.1-72.1c3.8-27.4 7.9-42.4 14-57.3 5.4-14.5 8.5 15.8 19.3 14.2 10.6-.7 19.4.3 29-.6 4-3 11.8-26.7 14.4-13 6.6 17.2 12 33.2 15.7 61 3.8 27.8 3.4 53.2 2 69 .2 6.5-4.8 10.6-10.2 11.7A138.4 138.4 0 0 1-1.7 201z"/>
+    <pattern id="tabby" width="24" height="10" fill="#ccc" patternTransform="scale(3)" patternUnits="userSpaceOnUse">
+        <path d="M12-2C9.2-2 7.2-.6 5.4.7 3.7 1.9 2.2 3 0 3v2c2.8 0 4.8-1.4 6.6-2.7C8.3 1.1 9.8 0 12 0s3.7 1 5.4 2.3C19.2 3.6 21.2 5 24 5V3c-2.2 0-3.7-1-5.4-2.3C16.8-.6 14.8-2 12-2Z"/>
+        <path d="M12 3C9.2 3 7.2 4.4 5.4 5.7 3.7 6.9 2.2 8 0 8v2c2.8 0 4.8-1.4 6.6-2.7C8.3 6.1 9.8 5 12 5s3.7 1 5.4 2.3C19.2 8.6 21.2 10 24 10V8c-2.2 0-3.7-1-5.4-2.3C16.8 4.4 14.8 3 12 3Z"/>
+        <path d="M12 8c-2.8 0-4.8 1.4-6.6 2.7C3.7 11.9 2.2 13 0 13v2c2.8 0 4.8-1.4 6.6-2.7C8.3 11.1 9.8 10 12 10s3.7 1 5.4 2.3c1.8 1.3 3.8 2.7 6.6 2.7v-2c-2.2 0-3.7-1-5.4-2.3C16.8 9.4 14.8 8 12 8Z"/>
+    </pattern>
+    <pattern id="strips" width="4" height="1" fill="rgba(199, 11, 11, 1)" patternTransform="rotate(45 -3.3 .6) scale(2)" patternUnits="userSpaceOnUse">
+      <rect fill="rgba(0, 0, 167, 1)" width="100%" height="100%" />
+      <path id="rect152" stroke="none" d="M0-.5h1v2H0z"/>
+    </pattern>
+    <path id="body" stroke-width="1" d="M52.8 149.5a203 203 0 0 1-44-4c-5.8-.6-7-6.8-7.4-12.2a314 314 0 0 1 2.6-70C8 36 12.5 29.5 5.3 1c0 0 9.7 5 28.5 17 10.5-.8 23.3 1 32.9 0C86.2 3.2 92 1.3 92 1.3c-6.4 30.8.3 37.8 4 65.3 3.8 27.6 4 52 2.6 67.6.2 6.5-4.8 10.7-10.2 11.7a138.6 138.6 0 0 1-35.7 3.7Z" />
+    ${faceDefs}
+    ${accessoryDefs}
   </defs>
     ${rows}
     ${cats}
@@ -81,43 +143,48 @@ function createCat(
   width: number,
   height: number,
   color: keyof typeof CAT_COLORS,
-  patterns: CatPattern[]
+  patterns: CatPattern[],
+  accessories: [Accessory, AccessoryPlace][]
 ): string {
   if (color === "black") patterns = patterns.filter((p) => p !== "tabby");
   else if (color === "white")
     patterns = patterns.filter((p) => p !== "tuxedo" && p !== "tabby");
 
+  const stroke = "#100f0d";
+  const black = color === "black";
+  const tabby = patterns.includes("tabby");
+  const tuxedo = patterns.includes("tuxedo");
+
   return `<g class="draggable" style=--color:${CAT_COLORS[color]}>
-  <g transform="scale(${width} ${height})translate(59 -51)">
-    <use class="body" href="#body" fill="var(--color)" stroke="#100f0d" />
+  <g transform="scale(${width} ${height})">
+    <use class="body" href="#body" fill="var(--color)" stroke="${stroke}" />
     ${
-      patterns.includes("tabby")
+      tabby
         ? '<use href="#body" fill="url(#tabby)" stroke="none" style="mix-blend-mode:multiply"/>'
         : ""
     }
     ${
-      patterns.includes("tuxedo")
-        ? '<path id="belly" fill="#fbfcfc" stroke="none" d="M16 151.6c-6.8-6-27.6-7.6-37.6-.5s-10.5 40.1-13 47c9.6 2.2 27 2.4 32.9 2.4 12.4 0 22.7-1 26.2-1.8-1.5-7.8-3.5-42.7-8.6-47.1"/>'
+      tuxedo
+        ? '<path fill="#fbfcfc" stroke="none" stroke-width="1" d="M5.4 93c-12.4 0 34.4 15.7 9.5 52.6 34.7 4 38.3 4.4 73.8-1.4-34.3-35.5 20-50.7 7.8-50.8-42.4-.4-35.9-58-47-73.3C37.8 38.3 53.1 93.4 5.4 93Z" />'
         : ""
     }
-    <path id="ear" fill="#ffd0e8" stroke="none" d="M23.7 56.2c-1.8 0-5.8 8.6-6.2 10.7-.3 1.4 10 1.8 10.4.6.3-1.2-3-11.4-4.2-11.3z"/>
-    <path id="eye" stroke="#9cca1cff" stroke-width="3.1" d="m10 89 4 1" />
-    <g id="hand${index}" transform="rotate(90,24,135)">
-      <path id="paw" fill="${
-        patterns.includes("tuxedo") ? "#fbfcfc" : "var(--color)"
-      }" stroke="#100f0d" stroke-width="1.6" d="M30.8 120.8c0-.4 1.7-7.4.2-10.5-.7-1.4-2.7-2.2-5.2-2.2h-.6c-2.5.2-5.4 1-6.3 2.8-1.5 2.7-.3 10-.3 10.4"/>
-      <path id="finger" stroke="#100f0d" stroke-width="1.1" d="M27 108.6v2.6"/>
-      <use xlink:href="#finger" id="finger2" transform="translate(-4.6 .5)"/>
+    <use xlink:href="#3" style="${
+      black ? "stroke:#fff; mix-blend-mode:difference" : "stroke:" + stroke
+    }"/>
+    <path id="nose" fill="${stroke}" stroke="#999" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="1" d="M44.8 40.9c0-1.3 9.7-1.4 9.8-.2 0 0-2.5 4.6-4.8 4.6-2.4 0-5-4.4-5-4.4Z"/>
+    <path id="ear" fill="#faa" stroke="${stroke}" stroke-width="1" d="m86.3 10-11.2 7 9.5 5.7Z"/>
+    <use xlink:href="#ear" id="earl" stroke-width="1" transform="matrix(-.997 0 0 .992 98 0)"/>
+    ${accessories.map(
+      ([item, place]) => `<use xlink:href="#${item}" class="${place}"/>`
+    )}
+    <g id="hand${index}" fill="${
+    tuxedo ? "#fbfcfc" : "var(--color)"
+  }" stroke-width="1.5" transform="translate(-.4)rotate(90,77,87)">
+      <path id="paw" stroke="${stroke}" d="M83.6 75.2c0-.4 1.7-7.4.2-10.4-.7-1.4-2.6-2.2-5.2-2.1h-.5c-2.5.1-5.3 1-6.2 2.6-1.5 2.8-.4 10-.4 10.4"/>
+      <path id="finger" stroke="${stroke}" stroke-linejoin="miter" d="M79.8 63.1v2.6"/>
+      <use xlink:href="#finger" id="finger2" transform="matrix(.988 0 0 .992 -3 .8)"/>
     </g>
-    <use xlink:href="#hand${index}" id="handl" transform="matrix(-1 0 0 1 -8 0)rotate(180,24,135)"/>
-    <use xlink:href="#eye" id="eyel" transform="matrix(-1 0 0 1 -8 0)" />
-    <g id="nm" transform="translate(1.8 2.1)" >
-      <path id="mouth" fill="none" stroke="#11100e" stroke-width="1" d="M0 96.2c-.4.5-1.1 1.9-2.5 1.6C-4 97.5-4 95.6-4 95.6"/>
-      <path id="nose" fill="#ffaad6" d="M-4.8 95.8v-3c1.5 0 2.7 0 2.8.8 0 .7-1 1.8-2.2 2v.1a2.5 2.5 0 0 1-.6 0"/>
-      <use xlink:href="#mouth" id="mouthl" transform="matrix(-1 0 0 1 -9.6 0)"/>
-      <use xlink:href="#nose" id="nosel" transform="matrix(-1 0 0 1 -9.6 0)"/>
-    </g>
-    <use xlink:href="#ear" id="earl" transform="matrix(-1 0 0 1 -9 .4)"/>
+    <use xlink:href="#hand${index}" id="handl" fill="#fff" stroke-width="1" transform="matrix(-.997 0 0 .992 99.6 .5)rotate(180,78,87)"/>
   </g>
   </g>`;
 }
@@ -144,7 +211,8 @@ function putElementInRow(
   x: number,
   resolve = true
 ) {
-  const height = element.getBBox().height;
+  const bbox = element.getBBox();
+  const height = bbox.height + bbox.y;
   const rowY = parseFloat(row.querySelector(".row-line")!.getAttribute("y1")!);
   element.setAttribute("transform", `translate(${x}, ${rowY - height})`);
 
