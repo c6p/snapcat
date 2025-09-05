@@ -1,20 +1,9 @@
-import {
-  choose,
-  popRandom,
-  rand,
-  randb,
-  randf,
-  randomItem,
-  randomTrait,
-} from "./utils";
+import { choose, rand, randb, randomTrait } from "./utils";
 import { CAT_COLORS, type CatColor, type CatPattern } from "./colors";
-import {
-  ACCESSORIES,
-  type Accessory,
-  type AccessoryPlace,
-} from "./accessories";
+import { type Accessory, type AccessoryPlace } from "./accessories";
 import { type CatName, CAT_NAMES } from "./names";
 import { MoodLevels, Moods, Score, type CatTrait } from "./traits";
+import { cats as CATS } from "./cats";
 
 const WIDTH = 640;
 const HEIGHT = 800;
@@ -86,28 +75,27 @@ function initLevel(app: HTMLDivElement) {
     createRow(rowCount - i - 1)
   ).join("");
 
-  const catPatterns: CatPattern[] = ["tuxedo", "tabby"];
-  const colors = Object.keys(CAT_COLORS) as (keyof typeof CAT_COLORS)[];
-  for (let i = 0; i < catCount; i++) {
-    const xScale = randf(0.7, 1.3);
-    const yScale = randf(0.7, 1.3);
-    const color = choose(colors);
-
-    // TODO handle no name remained
-    const name = popRandom(catNames[color]);
-    if (!name) throw new Error("No name remained");
-    const patterns = catPatterns.filter(() => randb());
-    const accessories = Object.entries(ACCESSORIES)
-      .map(([place, items]) => [randomItem(items), place])
-      .filter(([item, _place]) => item !== null) as [
-      Accessory,
-      AccessoryPlace
-    ][];
-
-    const cat = { name, color, patterns, accessories, xScale, yScale };
-    cats[name] = cat;
+  const catList = Object.entries(CATS).map(([name, cat]) => {
+    const { xScale: x, yScale: y } = cat;
+    const xScale = parseFloat(x);
+    const yScale = parseFloat(y);
+    return { ...cat, name, xScale, yScale } as Cat;
+  });
+  Array.from({ length: catCount }, (_) => choose(catList)).forEach((cat) => {
+    cats[cat.name] = cat;
+  });
+  // ensure a black cat
+  const isBlack = (c: Cat) =>
+    c.color === "black" && !c.patterns.includes("tuxedo");
+  if (!Object.values(cats).find(isBlack)) {
+    const blackCat = catList.find(isBlack);
+    if (blackCat) {
+      // delete random cat
+      delete cats[choose(Object.values(cats))!.name];
+      // add black cat
+      cats[blackCat.name] = blackCat;
+    }
   }
-  ensureABlackCat();
   console.warn(cats);
 
   const catsHtml = Object.values(cats)
@@ -228,25 +216,6 @@ function initLevel(app: HTMLDivElement) {
     putElementInRow(cat, getRowAt(rand(0, rowCount - 1)), WIDTH / 2)
   );
   draggables.forEach((cat) => setSmile(cat));
-}
-
-function ensureABlackCat() {
-  const blackCats = Object.values(cats).filter(
-    (cat) => cat.color === "black" && !cat.patterns.includes("tuxedo")
-  );
-  if (blackCats.length === 0) {
-    const name = Object.keys(cats)[0] as CatName;
-    convertToBlack(name);
-  }
-}
-
-function convertToBlack(name: CatName) {
-  const cat = cats[name];
-  cat.color = "black";
-  cat.name = popRandom(catNames[cat.color])!;
-  cat.patterns = [];
-  delete cats[name];
-  cats[cat.name] = cat;
 }
 
 function createCat({

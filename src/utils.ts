@@ -1,6 +1,26 @@
 import type { Dislikes, Likes, TypeMap } from "./traits";
 
-let random: () => number = Math.random;
+// from PracRand
+function sfc32(a: number, b: number, c: number, d: number) {
+  return function () {
+    a |= 0;
+    b |= 0;
+    c |= 0;
+    d |= 0;
+    var t = (((a + b) | 0) + d) | 0;
+    d = (d + 1) | 0;
+    a = b ^ (b >>> 9);
+    b = (c + (c << 3)) | 0;
+    c = (c << 21) | (c >>> 11);
+    c = (c + t) | 0;
+    return (t >>> 0) / 4294967296;
+  };
+}
+
+let random = sfc32(0xdeadbeef, 0xbeefcafe, 0x36984217, 0x83a590d1);
+// throw away first 20 values
+for (let i = 0; i < 20; i++) random();
+
 export function rand(min: number, max: number): number {
   return Math.floor(random() * (max - min + 1)) + min;
 }
@@ -43,6 +63,28 @@ export function randomItems<T>(
   return shuffled.slice(0, count);
 }
 
+export function randomWeightedItem<T>(
+  list: readonly [T, number][],
+  nullChance: number = 0.5
+): T | null {
+  if (random() < nullChance) return null;
+  const total = list.reduce((sum, [, weight]) => sum + weight, 0);
+  let r = random() * total;
+  for (const [item, weight] of list) {
+    if (r < weight) return item;
+    r -= weight;
+  }
+  // If rounding errors or zero weights occur, return null
+  return null;
+}
+
+/*export function popRandomItems<T>(list: T[], emptyChance: number = 0.5): T[] {
+  const items = randomItems(list, emptyChance);
+  list.filter((item) => !items.includes(item));
+  return items;
+}*/
+
+// NOTE: modifies passed list
 export function randomTrait<
   T extends keyof TypeMap,
   K extends "likes" | "dislikes",
@@ -69,3 +111,9 @@ export function randomTrait<
     return { kind, dislikes: items } as any;
   }
 }
+
+/*export function removedOnce<T>(arr: T[], items: T | T[]): T[] {
+  const itemList = Array.isArray(items) ? items : [items];
+  const indices = itemList.map(arr.indexOf);
+  return arr.filter((_, i) => !indices.includes(i));
+}*/
