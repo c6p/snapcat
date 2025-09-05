@@ -17,11 +17,12 @@ import { type CatName, CAT_NAMES } from "./names";
 import { MoodLevels, Moods, Score, type CatTrait } from "./traits";
 
 const WIDTH = 640;
-const HEIGHT = 640;
+const HEIGHT = 800;
 const ROW_HEIGHT = 60;
 const ROW_PROXIMITY_MULTIPLIER = 2;
 const STEP_OFFSET = 10;
-const ROW_MIN = HEIGHT - 100;
+const BOTTOM_BAR = 80;
+const ROW_MIN = HEIGHT - (BOTTOM_BAR + 30);
 const NEAR_LIMIT = 200;
 
 type Cat = {
@@ -155,7 +156,7 @@ function initLevel(app: HTMLDivElement) {
     <path id="balloon" transform="translate(-55 0)" fill="#fd5" d="M95.3-55.6a20 20 0 0 0-5.4 2 22.3 22.3 0 0 0-11.3 17.1 29 29 0 0 0 3 15.1 71.1 71.1 0 0 0 10.2 15 16.3 16.3 0 0 0 5.4 4c.2.2-.2.9-1.3 2.5-.7 1.2-.7 1.3-.2 1.3l.5.1 1.6.4c.4 0 .4 0 .3.3-.1.4-.2 88.7 0 89 0 .4.3.6.4.3l.2-28.9.1-60.3 1 .2 1 .2.3-.4c.2-.3.7-.6 1.1-.8.5-.2.8-.4.8-.6 0 0-.2-.5-.7-1-1-1.2-1.5-2-1.5-2.3a24.4 24.4 0 0 0 8.4-8 76 76 0 0 0 6.5-10.4 25 25 0 0 0 3.4-12.4 23.4 23.4 0 0 0-3.7-13.6c-3.1-4.6-8.1-8-13.2-8.8a39 39 0 0 0-6.9 0z" />
   `;
   app.innerHTML = `
-  <svg id="game" width="100%" height="100%" viewBox="0 0 ${WIDTH} ${HEIGHT}" >
+  <svg id="game" height="100%" viewBox="0 0 ${WIDTH} ${HEIGHT}" >
   <defs>
     <filter id="turbulence">
       <feTurbulence type="turbulence" baseFrequency="0.015 0.1" numOctaves="1" seed="2" result="NOISE"></feTurbulence>
@@ -184,6 +185,17 @@ function initLevel(app: HTMLDivElement) {
     <text x="10" y="15" id="info"></text>
     ${rows}
     ${catsHtml}
+    <rect y="${
+      HEIGHT - BOTTOM_BAR
+    }" width="${WIDTH}" height="${BOTTOM_BAR}" fill="#111" />
+    <g transform="translate(${WIDTH / 2}, ${
+    HEIGHT - BOTTOM_BAR / 2
+  })" id="camera" style="cursor:pointer">
+    <circle cx="0" cy="0" r="${BOTTOM_BAR / 2 - 5}" fill="#fff" />
+    <text font-size="${
+      BOTTOM_BAR / 2
+    }" text-anchor="middle" dominant-baseline="central">📷</text>
+    </g>
   </svg>
   `;
 

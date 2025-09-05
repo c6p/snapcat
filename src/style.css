@@ -4,6 +4,8 @@
   background-color: #ccc;
 }
 
+body { margin: 0;}
+
 #app {
   margin: 0 auto;
   text-align: center;
@@ -32,8 +34,10 @@ button:focus-visible {
 
 #game {
   max-width: min(100vw, 40rem);
-  max-height: min(100vh, 40rem);
+  max-height: min(100vh, 50rem);
   touch-action: none;
+  border: 2px solid black;
+  border-radius: 5px;
 }
 
 .draggable {
