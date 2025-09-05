@@ -293,14 +293,16 @@ function createCat({
       ([item, place]) => `<use xlink:href="#${item}" class="${item} ${place}"/>`
     )}
     </g>
-    <g id="hand${name}" fill="${
+    <g id="hand${name}" style="${
+    black && !tuxedo ? "stroke:#aaa" : "stroke:" + stroke
+  }" fill="${
     tuxedo ? "#fbfcfc" : "var(--color)"
   }" stroke-width="1.5" transform="translate(-.4)rotate(90,77,87)">
-      <path id="paw" stroke="${stroke}" d="M83.6 75.2c0-.4 1.7-7.4.2-10.4-.7-1.4-2.6-2.2-5.2-2.1h-.5c-2.5.1-5.3 1-6.2 2.6-1.5 2.8-.4 10-.4 10.4"/>
-      <path id="finger" stroke="${stroke}" stroke-linejoin="miter" d="M79.8 63.1v2.6"/>
+      <path id="paw" d="M83.6 75.2c0-.4 1.7-7.4.2-10.4-.7-1.4-2.6-2.2-5.2-2.1h-.5c-2.5.1-5.3 1-6.2 2.6-1.5 2.8-.4 10-.4 10.4"/>
+      <path id="finger" stroke-linejoin="miter" d="M79.8 63.1v2.6"/>
       <use xlink:href="#finger" id="finger2" transform="matrix(.988 0 0 .992 -3 .8)"/>
     </g>
-    <use xlink:href="#hand${name}" id="handl" fill="#fff" stroke-width="1" transform="matrix(-.997 0 0 .992 99.6 .5)rotate(180,78,87)"/>
+    <use xlink:href="#hand${name}" fill="#fff" stroke-width="1" transform="matrix(-.997 0 0 .992 99.6 .5)rotate(180,78,87)"/>
   </g>
   <g transform="translate(${xScale * 50 - 25} ${yScale * 150 - 50})">
     <rect width="50" height="50" fill="#eee9" />
