@@ -62,6 +62,16 @@ export function returnToMenu(app: HTMLDivElement) {
   startGame(app);
 }
 
+function takePhoto() {
+  document.getElementById("info")!.style.display = "none";
+  const flash = document.getElementById("flash")!;
+  flash.classList.add("fire");
+  flash.onanimationend = () => {
+    document.getElementById("gameArea")?.classList.add("sepia");
+    flash.style.animation = "";
+  };
+}
+
 function startGame(app: HTMLDivElement) {
   console.log("Game started");
   initLevel(app);
@@ -183,15 +193,18 @@ function initLevel(app: HTMLDivElement) {
     ${accessoryDefs}
   </defs>
     <text x="10" y="15" id="info"></text>
+    <g id="gameArea">
     ${rows}
     ${catsHtml}
+    </g>
+    <rect id="flash" x="0" y="0" width="${WIDTH}" height="${HEIGHT}" fill="#eff" opacity="0" />
     <rect y="${
       HEIGHT - BOTTOM_BAR
     }" width="${WIDTH}" height="${BOTTOM_BAR}" fill="#111" />
     <g transform="translate(${WIDTH / 2}, ${
     HEIGHT - BOTTOM_BAR / 2
   })" id="camera" style="cursor:pointer">
-    <circle cx="0" cy="0" r="${BOTTOM_BAR / 2 - 5}" fill="#fff" />
+    <circle cx="0" cy="0" r="${BOTTOM_BAR / 2 - 5}" fill="#eee" />
     <text font-size="${
       BOTTOM_BAR / 2
     }" text-anchor="middle" dominant-baseline="central">📷</text>
@@ -199,6 +212,7 @@ function initLevel(app: HTMLDivElement) {
   </svg>
   `;
 
+  document.getElementById("camera")!.onclick = takePhoto;
   setDragEvents();
 
   Object.keys(cats).forEach((name, index) => {

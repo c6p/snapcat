@@ -76,3 +76,19 @@ path {
 .dislikes { filter: drop-shadow(0px 0px 5px rgb(255, 0, 0)); }
 
 .score { font-weight: bold; }
+
+@keyframes camera-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes sepia-fade {
+  from { filter: sepia(0); }
+  to   { filter: sepia(1); }
+}
+#flash {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.fire { animation: camera-flash 0.3s ease-out; }
+.sepia { animation: sepia-fade 0.5s ease-out; filter:sepia(1); }
