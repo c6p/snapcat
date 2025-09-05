@@ -66,7 +66,9 @@ path {
 }
 
 .selected { filter: opacity(0.9); }
-
-.touch { filter: drop-shadow(0px 0px 5px rgb(0, 0, 255)); }
-
 .far { filter: blur(2px); }
+
+.likes { filter: drop-shadow(0px 0px 5px rgb(0, 255, 0)); }
+.dislikes { filter: drop-shadow(0px 0px 5px rgb(255, 0, 0)); }
+
+.score { font-weight: bold; }
