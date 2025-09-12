@@ -28,7 +28,7 @@ export default defineConfig(({ command, mode }) => {
     config.base = "";
     // @ts-ignore
     config.build = {
-      minify: "terser",
+      //minify: "terser",
       target: "es2022",
       modulePreload: { polyfill: false },
       assetsInlineLimit: 800,
