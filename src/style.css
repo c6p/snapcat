@@ -6,7 +6,7 @@
 
 body { 
   margin: 0;
-  height: 100vh;
+  height: calc(100vh - 10px);
   align-content: space-around;
 }
 
@@ -37,8 +37,8 @@ button:focus-visible {
 }
 
 #game {
-  max-width: min(100vw, 40rem);
-  max-height: min(100vh, 60rem);
+  max-width: min(calc(100vw - 10px), 40rem);
+  max-height: min(calc(100vh - 10px), 60rem);
   touch-action: none;
   border: 2px solid black;
   border-radius: 5px;
