@@ -51,13 +51,13 @@ export const levelDefs: LevelDef[] = [
             if (oldRowId !== (el.parentNode! as SVGGElement).dataset.index!) {
               counter++;
             }
-            if (counter === 1) {
-              updateInfo("<li>Great! The cat will sit on where its bottom is.</li><li>Try more to get a hang of it.</li>");
-            } else if (counter >= 3) {
+            if (counter === 3) {
               el.removeEventListener("pointerdown", down);
               el.removeEventListener("pointerup", up);
               updateInfo("<li>Great! Now, let's take out first photo.</li>", true);
-            }
+            } else if (counter === 1) {
+              updateInfo("<li>Great! The cat will sit on where its bottom is.</li><li>Try more to get a hang of it.</li>");
+            } 
           });
         };
         el.addEventListener("pointerdown", down, true); // NOTE: should be before dragEvents to access row

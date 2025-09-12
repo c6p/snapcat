@@ -250,14 +250,14 @@ function startGame() {
 }*/
 
 type CatPosMap = Record<CatName, { row: number, x: number }>
-let levelState: { level: number; /*state: LevelState;*/ objectivesMet: boolean, cats: Record<CatName, { row: number, x: number }> };
+let levelState: { level: number; done: boolean; /*state: LevelState;*/ objectivesMet: boolean, cats: Record<CatName, { row: number, x: number }> };
 function initLevel(lvl: number, forceRandom: boolean = false) {
   //console.error(lvl)
   catNames = Object.assign({} as typeof catNames, CAT_NAMES);
   const levelStorage = localStorage.getItem(`snapcat-level-${lvl + 1}`)
   //console.error(`snapcat-level-${lvl + 1}`, levelStorage)
   const levelData = levelStorage ? JSON.parse(levelStorage) as { cats: CatPosMap } : null;
-  levelState = { level: lvl, /*state: "base",*/ objectivesMet: false, cats: levelData?.cats ?? {} as CatPosMap };
+  levelState = { level: lvl, done: false, /*state: "base",*/ objectivesMet: false, cats: levelData?.cats ?? {} as CatPosMap };
 
   const rowCount = 5;
   const rows = Array.from({ length: rowCount }, (_, i) =>
@@ -763,8 +763,8 @@ function checkObjectives() {
   toggleNoPhoto();
 }
 
-function toggleNoPhoto(done: boolean = false) {
-  const { level, /*state,*/ objectivesMet } = levelState;
+function toggleNoPhoto() {
+  const { level, done, /*state,*/ objectivesMet } = levelState;
   let no = !(done || objectivesMet);
   const hasDoneCond = "doneFn" in levelDefs[level];
   if (hasDoneCond) no ||= !done;
@@ -775,8 +775,9 @@ function updateInfo(/*state: LevelState*/ txt: string, done: boolean = false) {
   //levelState.state = state;
   //const { level } = levelState;
   //const txt = levelDefs[level].text?.[state]
+  levelState.done = done;
   document.getElementById("info")!.innerHTML = txt ? `<h3 style="text-align:center">Tutorial</h3><ul>${txt}</ul>` : "";
-  toggleNoPhoto(done);
+  toggleNoPhoto();
 }
 
 function updateCatInfo(name: CatName, traits: CatTrait[]) {
