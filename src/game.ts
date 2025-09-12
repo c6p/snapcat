@@ -62,13 +62,12 @@ export function returnToMenu() {
       <h1>📸 😺</h1>
     </div>
     <div>
-      <button id="game" type="button">Start Game</button>
+      <button id="game" type="button">Play Game</button>
     </div>
 `;
   document
     .querySelector<HTMLButtonElement>("#game")!
     .addEventListener("click", () => startGame());
-    startGame()
 }
 
 function takePhoto(cleanup: () => void) {
@@ -222,12 +221,14 @@ function hideOverlay() {
 }
 
 function startGame() {
+  console.debug("Game started");
   const gameStorage = localStorage.getItem(`snapcat-levels`)
   if (gameStorage) {
     GameState = JSON.parse(gameStorage);
+    let nextLvl = GameState.levels.findIndex(l => l === null);
+    if (nextLvl === -1) nextLvl = 0
+    initLevel(nextLvl);
   }
-  console.debug("Game started");
-  initLevel(0);
 }
 
 /*function randomCats(catCount: number) {
