@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "cats": "ts-node src/write-cats.ts"
+    "cats": "vite-node src/write-cats.ts"
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
@@ -18,11 +18,12 @@
     "eslint": "^9.33.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "html-minifier": "^4.0.0",
+    "minizinc": "^4.4.3",
     "roadroller": "^2.1.0",
     "terser": "^5.43.1",
-    "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
     "typescript": "~5.8.3",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-node": "^3.2.4"
   }
 }
