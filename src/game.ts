@@ -228,6 +228,8 @@ function startGame() {
     let nextLvl = GameState.levels.findIndex(l => l === null);
     if (nextLvl === -1) nextLvl = 0
     initLevel(nextLvl);
+  } else {
+    initLevel(0);
   }
 }
 
