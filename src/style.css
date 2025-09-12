@@ -4,7 +4,11 @@
   background-color: #ccc;
 }
 
-body { margin: 0;}
+body { 
+  margin: 0;
+  height: 100vh;
+  align-content: space-around;
+}
 
 #app {
   margin: 0 auto;
@@ -34,10 +38,11 @@ button:focus-visible {
 
 #game {
   max-width: min(100vw, 40rem);
-  max-height: min(100vh, 50rem);
+  max-height: min(100vh, 60rem);
   touch-action: none;
   border: 2px solid black;
   border-radius: 5px;
+  box-shadow: black 1px 1px 10px;
 }
 
 .draggable {
@@ -72,8 +77,8 @@ path {
 .selected { filter: opacity(0.9); }
 .far { filter: blur(2px); }
 
-.likes { filter: drop-shadow(0px 0px 5px rgb(0, 255, 0)); }
-.dislikes { filter: drop-shadow(0px 0px 5px rgb(255, 0, 0)); }
+.likes { filter: drop-shadow(0px 0px 5px rgb(0, 255, 0)); stroke: rgb(0, 255, 0) !important; }
+.dislikes { filter: drop-shadow(0px 0px 5px rgb(255, 0, 0)); stroke: rgb(255, 0, 0) !important; }
 
 .score { font-weight: bold; }
 
@@ -92,3 +97,24 @@ path {
 }
 .fire { animation: camera-flash 0.3s ease-out; }
 .sepia { animation: sepia-fade 0.5s ease-out; filter:sepia(1); }
+
+#catInfo tr td:last-child { width: 1%; text-wrap: nowrap; }
+#catInfo span.like { filter: hue-rotate(30deg) saturate(3); }
+#catInfo span.dislike { filter: hue-rotate(310deg) saturate(3); }
+#catInfo tr:nth-child(odd) { background: #ddd}
+#objectives { background: #ddd; border-radius: 10px; }
+#objectives i { background: #fff; padding: 1px;}
+#objectives b { background: wheat;}
+#objectives li.check { list-style-type: "✔ "; color: green;}
+#photo > use[href="#xmark"] { display: none; }
+#photo.no > use[href="#xmark"] { display: block; }
+
+foreignObject { font-size: larger; text-wrap: balance; text-align: left; }
+foreignObject li {padding-bottom: 10px; }
+audio { display: none;}
+
+.sunglasses { mix-blend-mode: difference; }
+.accessories { stroke: #231f20}
+
+.level { text-anchor: middle; dominant-baseline: middle; }
+.level .score { fill: green }

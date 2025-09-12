@@ -1,4 +1,5 @@
 import type { Accessory, AccessoryPlace } from "./accessories";
+import type { Cat } from "./cat";
 import type { CatColor, CatPattern } from "./colors";
 import type { CatName } from "./names";
 
@@ -30,12 +31,12 @@ export type CatTrait =
 export const Score = {
   cat: 3,
   color: 2,
-  pattern: 2,
-  accessory: 1,
+  pattern: 1,
+  accessory: 2,
   place: 1,
 };
 
-export const MoodLevels = [-20, -10, 10, 20];
+export const MoodLevels = [-13, -6, 6, 13];
 export const Moods = [
   "miserable",
   "downcast",
@@ -49,19 +50,68 @@ export const MoodIndex = Object.fromEntries(
 );
 
 export const Comparators = {
-  LessThan: (a: Mood, b: Mood) => MoodIndex[a] < MoodIndex[b],
-  LessThanEqual: (a: Mood, b: Mood) => MoodIndex[a] <= MoodIndex[b],
-  GreaterThan: (a: Mood, b: Mood) => MoodIndex[a] > MoodIndex[b],
-  GreaterThanEqual: (a: Mood, b: Mood) => MoodIndex[a] >= MoodIndex[b],
-  Equal: (a: Mood, b: Mood) => MoodIndex[a] === MoodIndex[b],
+  LT: (a: Mood, b: Mood) => MoodIndex[a] < MoodIndex[b],
+  LE: (a: Mood, b: Mood) => MoodIndex[a] <= MoodIndex[b],
+  GT: (a: Mood, b: Mood) => MoodIndex[a] > MoodIndex[b],
+  GE: (a: Mood, b: Mood) => MoodIndex[a] >= MoodIndex[b],
+  EQ: (a: Mood, b: Mood) => MoodIndex[a] === MoodIndex[b],
 } as const;
-type Comparator = (typeof Comparators)[keyof typeof Comparators];
+//type Comparator = (typeof Comparators)[keyof typeof Comparators];
+export type ComparatorKey = keyof typeof Comparators;
+export const CompIndex: ComparatorKey[] = ["EQ", "GE", "LE", "GT", "LT"];
 
 type MoodObjective<T extends keyof TypeMap, V extends TypeMap[T]> = {
-  kind: T;
-  value: V;
+  value: [T, V | null][] | "fallback";
   mood: Mood;
-  comp: Comparator;
+  comp: ComparatorKey;
 };
 export type Objective = MoodObjective<keyof TypeMap, TypeMap[keyof TypeMap]>;
 // TODO VisibleObjective<face|body|accessory> etc
+
+
+export function objectiveMatches(obj: Objective, catList: Cat[]) {
+  const matches = catList.map(() => true);
+  if (obj.value === "fallback") return matches;
+  for (const [key, value] of obj.value) {
+    switch (key) {
+      case "cat":
+        matches.forEach(
+          (m, i) => (matches[i] = m && catList[i].name === value)
+        );
+        break;
+      case "color":
+        matches.forEach(
+          (m, i) => (matches[i] = m && catList[i].color === value)
+        );
+        break;
+      case "pattern":
+        matches.forEach(
+          (m, i) =>
+          (matches[i] =
+            m && catList[i].patterns.includes(value as CatPattern))
+        );
+        break;
+      case "accessory":
+        matches.forEach(
+          (m, i) =>
+          (matches[i] =
+            m &&
+            catList[i].accessories.some(
+              ([a, _p]) => a === (value as Accessory)
+            ))
+        );
+        break;
+      case "place":
+        matches.forEach(
+          (m, i) =>
+          (matches[i] =
+            m &&
+            catList[i].accessories.some(
+              ([_a, p]) => p === (value as AccessoryPlace)
+            ))
+        );
+        break;
+    }
+  }
+  return matches;
+}

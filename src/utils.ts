@@ -1,3 +1,4 @@
+import { Halving, type Accessory } from "./accessories";
 import type { Dislikes, Likes, TypeMap } from "./traits";
 
 // from PracRand
@@ -7,7 +8,7 @@ function sfc32(a: number, b: number, c: number, d: number) {
     b |= 0;
     c |= 0;
     d |= 0;
-    var t = (((a + b) | 0) + d) | 0;
+    const t = (((a + b) | 0) + d) | 0;
     d = (d + 1) | 0;
     a = b ^ (b >>> 9);
     b = (c + (c << 3)) | 0;
@@ -17,103 +18,112 @@ function sfc32(a: number, b: number, c: number, d: number) {
   };
 }
 
-let random = sfc32(0xdeadbeef, 0xbeefcafe, 0x36984217, 0x83a590d1);
-// throw away first 20 values
-for (let i = 0; i < 20; i++) random();
+export const Random = () => {
+  const random = sfc32(0xdeadbeef, 0xbeefcafe, 0x36984217, 0x83a590d1)
 
-export function rand(min: number, max: number): number {
-  return Math.floor(random() * (max - min + 1)) + min;
-}
+  // throw away first 32 values
+  for (let i = 0; i < 32; i++) random();
 
-export function randf(min: number, max: number): number {
-  return random() * (max - min) + min;
-}
+  const rand = (min: number, max: number): number =>
+    Math.floor(random() * (max - min + 1)) + min;
 
-export function randb(): boolean {
-  return random() > 0.5;
-}
+  const randf = (min: number, max: number): number =>
+    random() * (max - min) + min;
 
-export function choose<T>(arr: T[]): T {
-  return arr[rand(0, arr.length - 1)];
-}
+  const randb = (trueChance: number = 0.5): boolean => random() < trueChance;
 
-export function popRandom<T>(arr: T[]): T | undefined {
-  if (arr.length === 0) return undefined;
-  const index = rand(0, arr.length - 1);
-  const item = arr[index];
-  arr.splice(index, 1);
-  return item;
-}
+  const choose = <T>(arr: T[]): T => arr[rand(0, arr.length - 1)];
 
-export function randomItem<T>(
-  list: readonly T[],
-  nullChance: number = 0.5
-): T | null {
-  return random() < nullChance
-    ? null
-    : list[Math.floor(random() * list.length)];
-}
+  const popRandom = <T>(arr: T[]): T | undefined => {
+    if (arr.length === 0) return undefined;
+    const index = rand(0, arr.length - 1);
+    const item = arr[index];
+    arr.splice(index, 1);
+    return item;
+  };
 
-export function randomItems<T>(
-  list: readonly T[],
-  emptyChance: number = 0.5
-): T[] {
-  const count = random() < emptyChance ? 0 : rand(0, list.length);
-  const shuffled = [...list].sort(() => random() - 0.5);
-  return shuffled.slice(0, count);
-}
+  const randomItem = <T>(
+    list: readonly T[],
+    nullChance: number = 0.5
+  ): T | null =>
+    random() < nullChance ? null : list[Math.floor(random() * list.length)];
 
-export function randomWeightedItem<T>(
-  list: readonly [T, number][],
-  nullChance: number = 0.5
-): T | null {
-  if (random() < nullChance) return null;
-  const total = list.reduce((sum, [, weight]) => sum + weight, 0);
-  let r = random() * total;
-  for (const [item, weight] of list) {
-    if (r < weight) return item;
-    r -= weight;
-  }
-  // If rounding errors or zero weights occur, return null
-  return null;
-}
+  const randomItems = <T>(
+    list: readonly T[],
+    emptyChance: number = 0.5
+  ): T[] => {
+    let count = 0;
+    if (random() >= emptyChance) {
+      const u = random();
+      const max = list.length / 2;
+      count = Math.floor(Math.log2(1 + u * (Math.pow(2, max) - 1)));
+    }
+    // Fisher-Yates shuffle (deterministic with our random)
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, count);
+  };
 
-/*export function popRandomItems<T>(list: T[], emptyChance: number = 0.5): T[] {
-  const items = randomItems(list, emptyChance);
-  list.filter((item) => !items.includes(item));
-  return items;
-}*/
+  const randomWeightedItem = (
+    items: Partial<Record<Accessory, number>>,
+    nullChance: number = 0.5
+  ): Accessory | null => {
+    const list = Object.entries(items).sort(([a], [b]) => a.localeCompare(b)) as [Accessory, number][];
+    if (random() < nullChance) return null;
+    const total = list.reduce((sum, [, weight]) => sum + weight, 0);
+    let r = random() * total;
+    for (const [item, weight] of list) {
+      if (r < weight) {
+        items[item]! /= Halving[item];
+        return item;
+      }
+      r -= weight;
+    }
+    return null;
+  };
 
-// NOTE: modifies passed list
-export function randomTrait<
-  T extends keyof TypeMap,
-  K extends "likes" | "dislikes",
-  N extends boolean = true
->(
-  kind: T,
-  key: K,
-  list: TypeMap[T][],
-  emptyChance: number = 0.5,
-  notEmpty?: N
-): N extends true
-  ? K extends "likes"
-    ? Likes<T> | null
-    : Dislikes<T> | null
-  : K extends "likes"
-  ? Likes<T>
-  : Dislikes<T> {
-  const items = randomItems(list, emptyChance);
-  if (notEmpty !== false && items.length === 0) return null as any;
-  list.splice(0, list.length, ...list.filter((i) => items.includes(i)));
-  if (key === "likes") {
-    return { kind, likes: items } as any;
-  } else {
-    return { kind, dislikes: items } as any;
-  }
-}
+  const randomTrait = <
+    T extends keyof TypeMap,
+    K extends "likes" | "dislikes",
+    N extends boolean = true
+  >(
+    kind: T,
+    key: K,
+    list: TypeMap[T][],
+    nullChance: number = 0.5,
+    nullable?: N
+  ): N extends true
+    ? K extends "likes"
+      ? Likes<T> | null
+      : Dislikes<T> | null
+    : K extends "likes"
+    ? Likes<T>
+    : Dislikes<T> => {
+    const items = randomItems(list, nullChance);
+    if (items === null) return null as any;
+    if (nullable !== false && items.length === 0) return null as any;
+    list.splice(0, list.length, ...list.filter((i) => !items.includes(i)));
+    if (key === "likes") {
+      return { kind, likes: items } as any;
+    } else {
+      return { kind, dislikes: items } as any;
+    }
+  };
 
-/*export function removedOnce<T>(arr: T[], items: T | T[]): T[] {
-  const itemList = Array.isArray(items) ? items : [items];
-  const indices = itemList.map(arr.indexOf);
-  return arr.filter((_, i) => !indices.includes(i));
-}*/
+  return {
+    random,
+    rand,
+    randf,
+    randb,
+    choose,
+    popRandom,
+    randomItem,
+    randomItems,
+    randomWeightedItem,
+    randomTrait,
+  };
+};
+
