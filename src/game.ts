@@ -109,7 +109,7 @@ function showLevelMenu() {
   let lastSolvedIndex = GameState.levels.findIndex((v) => v === null)
   if (lastSolvedIndex === -1)
     lastSolvedIndex = GameState.levels.length
-  console.warn("last", lastSolvedIndex)
+  //console.warn("last", lastSolvedIndex)
   const levelSelect = document.getElementById("overlay")!;
   levelSelect.innerHTML = `<rect width="${WIDTH}" height="${HEIGHT}" fill="#333c" />
   <text x="${WIDTH / 2
@@ -226,7 +226,7 @@ function startGame() {
   if (gameStorage) {
     GameState = JSON.parse(gameStorage);
   }
-  console.log("Game started");
+  console.debug("Game started");
   initLevel(0);
 }
 
@@ -252,10 +252,10 @@ function startGame() {
 type CatPosMap = Record<CatName, { row: number, x: number }>
 let levelState: { level: number; /*state: LevelState;*/ objectivesMet: boolean, cats: Record<CatName, { row: number, x: number }> };
 function initLevel(lvl: number, forceRandom: boolean = false) {
-  console.error(lvl)
+  //console.error(lvl)
   catNames = Object.assign({} as typeof catNames, CAT_NAMES);
   const levelStorage = localStorage.getItem(`snapcat-level-${lvl + 1}`)
-  console.error(`snapcat-level-${lvl + 1}`, levelStorage)
+  //console.error(`snapcat-level-${lvl + 1}`, levelStorage)
   const levelData = levelStorage ? JSON.parse(levelStorage) as { cats: CatPosMap } : null;
   levelState = { level: lvl, /*state: "base",*/ objectivesMet: false, cats: levelData?.cats ?? {} as CatPosMap };
 
@@ -269,13 +269,13 @@ function initLevel(lvl: number, forceRandom: boolean = false) {
   let catList = toCatList(CATS);
   catList = level.cats.map((c) => catList[c]);
   contributions = calcContributionMatrix(catList);
-  console.warn(contributions);
+  //console.warn(contributions);
   catList.forEach((cat, i) => {
     cats[cat.name] = cat;
     indices[cat.name] = i;
   });
   //randomCats(9);
-  console.warn(cats);
+  //console.warn(cats);
 
   const catsHtml = Object.values(cats)
     .map((cat) => createCat(cat))
@@ -563,7 +563,7 @@ function getElemsByTrait(
       );
       break;
   }
-      console.error(elems)
+      //console.error(elems)
   return [key as "likes" | "dislikes", elems ?? []];
 }
 
@@ -621,7 +621,7 @@ function calcScore(
   name: CatName,
   elemPair: [CatName, ReturnType<typeof getRelativeElements>[number]][]
 ): number {
-  console.warn(name, elemPair);
+  //console.warn(name, elemPair);
   //const catTraits = cats[name].traits;
   let totalScore = 0;
   const index = indices[name];
@@ -673,7 +673,7 @@ function makeSmile(element: SVGGraphicsElement, score: number) {
 function setSmile(element: SVGGraphicsElement) {
   const row = element.parentNode! as SVGGElement;
   const rowIndex = parseInt(row.dataset.index!);
-  console.warn(row, rowIndex, element);
+  //console.warn(row, rowIndex, element);
   const elements = getRelativeElements(element, rowIndex);
   const elementPair: [
     CatName,
@@ -721,7 +721,7 @@ function objectiveText(obj: Objective) {
     LE: "at most",
     GE: "at least",
   } as { [K in ComparatorKey]: string };
-  console.error(`${text} are <u>${compText[obj.comp]}</u> <b>${obj.mood}</b>`);
+  //console.error(`${text} are <u>${compText[obj.comp]}</u> <b>${obj.mood}</b>`);
   return `<li>${text} are <u>${compText[obj.comp]}</u> <b>${obj.mood}</b></li>`;
 }
 
@@ -795,7 +795,7 @@ function updateCatInfo(name: CatName, traits: CatTrait[]) {
     .join("");
   document.querySelector("#catInfo")!.innerHTML = `<h3>cat: ${name}</h3>
     <table>${info}</table>`;
-  console.warn(info);
+  //console.warn(info);
 }
 
 /*function updateInfo(name: CatName, traits: CatTrait[]) {
@@ -875,7 +875,7 @@ function calcDistance(
 }
 
 function getRelativeElements(element: SVGGraphicsElement, rowIndex: number) {
-  console.warn(element, rowIndex);
+  //console.warn(element, rowIndex);
   const { height, y, width, x } = element.getBBox();
   const transform = element.transform.baseVal.getItem(0).matrix;
   const rows = getRows();
@@ -924,7 +924,7 @@ function markAll(element: SVGGraphicsElement, rowIndex: number) {
   const name = element.id as CatName;
   markTraits(name);
   checkObjectives();
-  console.error(element.dataset.score);
+  //console.error(element.dataset.score);
 }
 
 function unmarkAll() {
@@ -1080,7 +1080,7 @@ function setDragEvents() {
     unmarkAll();
     markAll(selectedElement, rowIndex);
     selectedElement = null;
-    console.error("endDrag")
+    //console.error("endDrag")
   };
 
   const clear = (_: PointerEvent) => {

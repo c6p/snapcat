@@ -50,7 +50,7 @@ const catsJson =
   `import type { generateCats } from "./cat";
 export const cats: ReturnType<typeof generateCats> = ` + JSON.stringify(cats);
 writeFileSync("src/cats.ts", catsJson, { encoding: "utf-8" });
-console.log("cats.ts written.");
+//console.log("cats.ts written.");
 
 const catList = toCatList(cats);
 const base = createDzn(cats);
@@ -65,7 +65,7 @@ for (let i = 0; i < levelDefs.length; i++) {
     const model = new MiniZinc.Model();
     model.addFile("src/cat.mzn");
     const rules = generateRules(levelDef, catList);
-    console.warn(rules);
+    //console.warn(rules);
     const allRules = Object.assign(base, rules);
     //writeFileSync(`src/level${i + 1}.dzn.json`, JSON.stringify(allRules));
     model.addJson(allRules);
@@ -77,15 +77,15 @@ for (let i = 0; i < levelDefs.length; i++) {
       },
     });
     const output = result.solution?.output.json!;
-    console.warn(output.mood_score);
-    console.warn(output);
+    //console.warn(output.mood_score);
+    //console.warn(output);
     level = { cats: output!.cats.map((c: number) => c - 1) };
     solution = {
       row: output!.row.map((r: number) => r - 1),
       x: output!.x.map((x: number) => x * 20),
     };
   } catch (e) {
-    console.error("MiniZinc error:", (e as Error).message);
+    //console.error("MiniZinc error:", (e as Error).message);
   } finally {
     if (levels.length <= i) {
       levels.push(level);
@@ -101,7 +101,7 @@ writeFileSync(
   `export const levels = ${JSON.stringify(levels)};`,
   { encoding: "utf-8" }
 );
-console.log("levels.ts written.");
+//console.log("levels.ts written.");
 writeFileSync(
   "src/solutions.ts",
   `export const solutions = ${JSON.stringify(solutions)};`,

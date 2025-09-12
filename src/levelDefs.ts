@@ -37,17 +37,17 @@ export const levelDefs: LevelDef[] = [
       const draggables =
         document.querySelectorAll<SVGGeometryElement>(".draggable");
       draggables.forEach((el) => {
-        console.error(el);
+        //console.error(el);
         const down = () => {
           oldRowId = (el.parentNode! as SVGGElement).dataset.index!;
         };
         const up = () => {
           window.requestAnimationFrame(() => {
-            console.error(
+            /*console.error(
               "up",
               oldRowId,
               (el.parentNode! as SVGGElement).dataset.index!
-            );
+            );*/
             if (oldRowId !== (el.parentNode! as SVGGElement).dataset.index!) {
               counter++;
             }
@@ -82,7 +82,7 @@ export const levelDefs: LevelDef[] = [
       ];
       draggables.forEach((el) => {
         const far = () => {
-          console.error(draggables.map(d => d.classList.contains("far")))
+          //console.error(draggables.map(d => d.classList.contains("far")))
           if (draggables.some((d) => d.classList.contains("far"))) {
             updateInfo("<li>Great! Now, we are ready to be a CATographer.</li>", true);
             el.removeEventListener("pointerup", far);
