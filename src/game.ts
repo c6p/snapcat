@@ -12,16 +12,10 @@ const ROW_PROXIMITY_MULTIPLIER = 2;
 const STEP_OFFSET = 10;
 const BOTTOM_BAR = 80;
 const ROW_MIN = HEIGHT - (BOTTOM_BAR + 30);
-const NEAR_LIMIT = 200;
-
-type Cat = {
-  name: CatName;
-  color: CatColor;
-  patterns: CatPattern[];
-  accessories: [Accessory, AccessoryPlace][];
-  xScale: number;
-  yScale: number;
-};
+const putSound = (document.getElementById("click1") as HTMLAudioElement)!;
+putSound.volume = 0.3;
+const shutterSound1 = (document.getElementById("click2") as HTMLAudioElement)!;
+const shutterSound2 = (document.getElementById("click3") as HTMLAudioElement)!;
 
 const Spatial = {
   Disjoint: 0,
