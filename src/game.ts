@@ -58,10 +58,10 @@ export function returnToMenu() {
 
   APP.innerHTML = `
     <div class="card">
-      <h1>Snap Cat !</h1>
+      <h1>SnapCat !</h1>
+      <p>Complete the Black Cats' Album</p>
       <h1>📸 😺</h1>
-    </div>
-    <div>
+      <br>
       <button id="game" type="button">Play Game</button>
     </div>
 `;
@@ -94,7 +94,12 @@ function takePhoto(cleanup: () => void) {
     .reduce((sum, score) => sum + score, 0)  / draggables.length;
   totalScore = 50 + Math.min(15, Math.max(-15, totalScore)) * (50 / 15);
   //console.error("Total score:", totalScore);
-  document.getElementById("score")!.innerHTML = "Score: " + totalScore.toFixed(1) + (lastLevel ? "<tspan dx='-300' dy='100'>THE END !</tspan>" : "");
+  document.getElementById("score")!.innerHTML = "Score: " + totalScore.toFixed(1) 
+  if (lastLevel) {
+    const end = document.getElementById("end")!;
+    end.style.display = "block"
+    end.querySelector<SVGTextElement>("text")!.innerHTML = "<tspan font-size='30' x='300'>The Black Cat Album is full</tspan><tspan x='300' dy='70'>📸 Thanks, folks ! 🐾</tspan>"
+  }
   // TODO save to localstorage
   const { level, cats } = levelState;
   GameState.levels[level] = { score: totalScore };
@@ -390,6 +395,10 @@ function initLevel(lvl: number, forceRandom: boolean = false) {
       <text fill="#111" font-size="24" text-anchor="middle" dominant-baseline="middle">Next Level</text>
     </g>
     <text id="score" x="200" y="200" font-size="48" fill="green"></text>
+    <g id="end">
+    <rect fill="#eee" x="170" width="135" height="40" y="270" />
+    <text y="300" font-size="48" fill="black" font-weight="bold"></text>
+    </g>
     <g id="blackBar" transform="translate(0 ${HEIGHT - BOTTOM_BAR})">
       <rect  width="${WIDTH+5}" height="${BOTTOM_BAR}" fill="#111" />
       <text fill="#eee" font-size="36" transform="translate(50 54)">${lvl+1}</text>
@@ -797,7 +806,7 @@ function updateCatInfo(name: CatName, traits: CatTrait[]) {
     })
     .filter((item) => item !== null)
     .join("");
-  document.querySelector("#catInfo")!.innerHTML = `<h3>cat: ${name}</h3>
+  document.querySelector("#catInfo")!.innerHTML = `<h3>Cat: ${name}</h3>
     <table>${info}</table>`;
   //console.warn(info);
 }
@@ -1022,6 +1031,7 @@ function setDragEvents() {
     evt.stopPropagation();
     evt.preventDefault();
     selectedElement = evt.currentTarget as SVGGeometryElement;
+    selectedElement.setPointerCapture(evt.pointerId);
     oldRow = selectedElement.parentNode! as SVGGElement;
     const rowIndex = parseInt(oldRow.dataset.index!);
     //if (levelState.state !== "done") updateInfo("dragging");
@@ -1051,6 +1061,7 @@ function setDragEvents() {
 
   const endDrag = (evt: PointerEvent) => {
     if (!selectedElement) return;
+    selectedElement.releasePointerCapture(evt.pointerId);
     //if (levelState.state !== "done") updateInfo("base");
 
     const mousePos = getMousePosition(evt);

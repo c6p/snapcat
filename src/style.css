@@ -1,13 +1,18 @@
 :root {
   font-family: system-ui, sans-serif;
-  color: #213547;
+  color: #111;
   background-color: #ccc;
+  touch-action: none;
 }
 
 body { 
   margin: 0;
   height: calc(100vh - 10px);
   align-content: space-around;
+}
+
+.card {
+  font-size: larger;
 }
 
 #app {
@@ -46,6 +51,7 @@ button:focus-visible {
 }
 
 .draggable {
+  touch-action: none;
   cursor: move;
   transition: x 0.3s ease-in-out, y 0.3s ease-in-out;
   filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.7));
@@ -99,8 +105,8 @@ path {
 .sepia { animation: sepia-fade 0.5s ease-out; filter:sepia(1); }
 
 #catInfo tr td:last-child { width: 1%; text-wrap: nowrap; }
-#catInfo span.like { filter: hue-rotate(30deg) saturate(3); }
-#catInfo span.dislike { filter: hue-rotate(310deg) saturate(3); }
+span.like { filter: hue-rotate(30deg) saturate(3); }
+span.dislike { filter: hue-rotate(310deg) saturate(3); }
 #catInfo tr:nth-child(odd) { background: #ddd}
 #objectives { background: #ddd; border-radius: 10px; }
 #objectives i { background: #fff; padding: 1px;}
@@ -117,4 +123,6 @@ audio { display: none;}
 .accessories { stroke: #231f20}
 
 .level { text-anchor: middle; dominant-baseline: middle; }
-.level .score { fill: green }
+.level .score { fill: green; }
+#end { text-anchor: middle; display: none; }
+#score { font-weight: bold; }
